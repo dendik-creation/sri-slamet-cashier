@@ -23,7 +23,7 @@ const cashierNavs: NavItems = [
     {
         type: "item",
         title: "Dashboard",
-        url: "/admin/dashboard",
+        url: "/cashier/dashboard",
         icon: Grid2X2,
     },
 ];

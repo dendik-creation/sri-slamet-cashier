@@ -18,12 +18,12 @@ export default function AppSidebar({ role }: { role: "ADMIN" | "CASHIER" }) {
     const pathname = window.location.pathname;
     return (
         <Sidebar>
-            <SidebarContent className="bg-gray-800 min-h-full relative h-full flex flex-col">
+            <SidebarContent className="bg-amber-200 min-h-full relative h-full flex flex-col">
                 <SidebarHeader className="mt-3 ms-3 gap-0">
-                    <span className="text-white/80 font-bold">
+                    <span className="text-black/80 font-bold">
                         Sistem Kasir
                     </span>
-                    <span className="text-white/60 text-sm font-normal">
+                    <span className="text-black/60 text-sm font-normal">
                         CV Sri Slamet
                     </span>
                 </SidebarHeader>
@@ -39,7 +39,7 @@ export default function AppSidebar({ role }: { role: "ADMIN" | "CASHIER" }) {
                                         >
                                             <SidebarMenuButton
                                                 disabled
-                                                className="text-white uppercase text-xs"
+                                                className="text-black uppercase text-xs"
                                             >
                                                 <ArrowBigRightDash />
                                                 {item.title}
@@ -50,7 +50,7 @@ export default function AppSidebar({ role }: { role: "ADMIN" | "CASHIER" }) {
                                     const Icon = item.icon;
                                     return (
                                         <SidebarMenuItem
-                                            className={`text-white/80 transition-all`}
+                                            className="text-black/80 transition-all mb-0.5"
                                             key={item.title}
                                         >
                                             <SidebarMenuButton

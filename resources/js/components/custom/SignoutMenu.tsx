@@ -16,7 +16,7 @@ const SignoutMenu = () => {
     const [open, setOpen] = useState(false);
 
     const handleSignOut = async () => {
-        router.post("/auth/logout", {}, { preserveScroll: true });
+        router.post("/auth/signout", {}, { preserveScroll: true });
         setOpen(false);
     };
 

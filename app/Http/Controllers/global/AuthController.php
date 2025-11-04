@@ -12,16 +12,23 @@ use Inertia\Inertia;
 
 class AuthController extends Controller
 {
-    public function signedInStatus()
+    public function signedInStatus(Request $request)
     {
+        $from = $request->query('from', null);
         $auth = Auth::user();
         if (!$auth) {
             return Inertia::location('/auth/signin');
         }
         switch ($auth->role) {
             case User::ROLE_ADMIN:
+                if ($from === 'signin') {
+                    Session::flash('success', 'Login berhasil');
+                }
                 return Inertia::location('/admin/dashboard');
             case User::ROLE_CASHIER:
+                if ($from === 'signin') {
+                    Session::flash('success', 'Login berhasil');
+                }
                 return Inertia::location('/cashier/dashboard');
             default:
                 Auth::logout();
@@ -51,10 +58,9 @@ class AuthController extends Controller
         }
 
         if (Auth::attempt($credentials)) {
-            Session::flash('success', 'Login berhasil');
-            return Inertia::location('/');
+            return Inertia::location('/?from=signin');
         }
-        
+
         return back()->withErrors([
             'message' => 'Authentication failed',
         ]);
