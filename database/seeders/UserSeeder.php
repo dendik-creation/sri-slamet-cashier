@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
         $now = now();
         $admin = [
             'username' => 'admin',
-            'name' => 'Administrator',
+            'name' => 'Tuan Alam',
             'password' => Hash::make('12345'),
             'role' => 'ADMIN',
             'created_at' => $now,

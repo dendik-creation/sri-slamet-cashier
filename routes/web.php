@@ -14,6 +14,7 @@ Route::prefix('auth')->group(function () {
 
     Route::post('/signin', [AuthController::class, 'signIn'])->middleware('guest');
 });
+Route::post('/auth/signout', [AuthController::class, 'signOut'])->middleware('auth');
 
 // Admin Routes
 Route::prefix('admin')->middleware(['auth', adminAccess::class])->group(function(){
