@@ -55,3 +55,40 @@ export const inputDebounce = (
         }, delay);
     };
 };
+
+export const humanRole = (role: string) => {
+    switch (role) {
+        case "ADMIN":
+            return "Administrator";
+        case "CASHIER":
+            return "Kasir";
+        default:
+            return "Unknown";
+    }
+};
+
+export const generateStringRand = (
+    length: number,
+    withUppercase: boolean = false,
+    withSymbols: boolean = false,
+    withNumbers: boolean = false
+) => {
+    const lowercase = "abcdefghijklmnopqrstuvwxyz";
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const numbers = "0123456789";
+    const symbols = "!@#$%^&*()_+[]{}|;:,.<>?";
+    let characters = "";
+    characters += lowercase;
+    if (withUppercase) characters += uppercase;
+    if (withNumbers) characters += numbers;
+    if (withSymbols) characters += symbols;
+
+    if (characters.length === 0) return "";
+
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        result += characters[randomIndex];
+    }
+    return result;
+};

@@ -102,17 +102,37 @@ export function SelectSearchInput({
     className?: string;
 }) {
     const [open, setOpen] = useState(false);
+    const triggerRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        if (!open) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Tab") {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [open]);
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <div
+                    ref={triggerRef}
                     role="combobox"
                     aria-expanded={open}
+                    tabIndex={0}
                     className={cn(
-                        "min-w-full py-1.5 justify-between relative border border-gray-300 rounded-md px-4 flex items-center cursor-pointer",
+                        "min-w-full py-1.5 justify-between relative border border-input rounded-md px-4 flex items-center cursor-pointer outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
                         className
                     )}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setOpen(!open);
+                        }
+                    }}
+                    onClick={() => setOpen((prev) => !prev)}
                 >
                     {value ? (
                         <span className="font-normal">
@@ -130,7 +150,7 @@ export function SelectSearchInput({
                         <span
                             className="ml-2 h-4 w-4 shrink-0 opacity-50 cursor-pointer"
                             onClick={(e) => {
-                                e.stopPropagation(); // Prevent closing the popover
+                                e.stopPropagation();
                                 removeValue();
                             }}
                         >
@@ -155,6 +175,9 @@ export function SelectSearchInput({
                                         onSelect={() => {
                                             onChange(option.value);
                                             setOpen(false);
+                                            setTimeout(() => {
+                                                triggerRef.current?.focus();
+                                            }, 0);
                                         }}
                                     >
                                         <Check
