@@ -9,10 +9,10 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useForm } from "@inertiajs/react";
-import { DialogClose } from "@radix-ui/react-dialog";
 import { CircleFadingPlus, CircleX, Dices, Loader, Save } from "lucide-react";
 import React from "react";
 

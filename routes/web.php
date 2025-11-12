@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 
 use App\Http\Controllers\admin\UserController as AdminUserController;
+use App\Http\Controllers\admin\CustomerController as AdminCustomerController;
 
 
 Route::get('/', [AuthController::class, 'signedInStatus'])->name('login');
@@ -29,6 +30,12 @@ Route::prefix('admin')->middleware(['auth', adminAccess::class])->group(function
     Route::put('/users/{id}', [AdminUserController::class, 'update'])->name('admin.users.update');
     Route::put('/users/{id}/reset-password', [AdminUserController::class, 'resetPassword'])->name('admin.users.reset-password');
     Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+
+    // Master Customers
+    Route::get('/customers', [AdminCustomerController::class, 'index'])->name('admin.customers.index');
+    Route::post('/customers', [AdminCustomerController::class, 'store'])->name('admin.customers.store');
+    Route::put('/customers/{id}', [AdminCustomerController::class, 'update'])->name('admin.customers.update');
+    Route::delete('/customers/{id}', [AdminCustomerController::class, 'destroy'])->name('admin.customers.destroy');
 });
 
 // Cashier Routes

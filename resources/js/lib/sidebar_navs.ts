@@ -1,4 +1,12 @@
-import { Grid2X2, LucideProps, Users } from "lucide-react";
+import {
+    BanknoteArrowDown,
+    BanknoteArrowUp,
+    ContactRound,
+    Grid2X2,
+    LucideProps,
+    Receipt,
+    Users,
+} from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 
 export type NavItems = {
@@ -19,7 +27,7 @@ const adminNavs: NavItems = [
     },
     {
         type: "splitter",
-        title: "Master Data",
+        title: "Data Master",
         url: "#",
     },
     {
@@ -27,6 +35,35 @@ const adminNavs: NavItems = [
         title: "Data User",
         url: "/admin/users",
         icon: Users,
+    },
+    {
+        type: "item",
+        title: "Data Pelanggan",
+        url: "/admin/customers",
+        icon: ContactRound,
+    },
+    {
+        type: "splitter",
+        title: "Data Transaksi",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Aktivitas Transaksi",
+        url: "/admin/transactions",
+        icon: Receipt,
+    },
+    {
+        type: "item",
+        title: "Pemasukan",
+        url: "/admin/incomes",
+        icon: BanknoteArrowUp,
+    },
+    {
+        type: "item",
+        title: "Pengeluaran",
+        url: "/admin/expenses",
+        icon: BanknoteArrowDown,
     },
 ];
 
