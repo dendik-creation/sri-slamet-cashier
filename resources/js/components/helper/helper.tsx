@@ -67,6 +67,15 @@ export const humanRole = (role: string) => {
     }
 };
 
+export const handleElipsisText = (
+    text: string,
+    maxLength: number,
+    ellipsis: string = "…"
+) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + ellipsis;
+};
+
 export const generateStringRand = (
     length: number,
     withUppercase: boolean = false,

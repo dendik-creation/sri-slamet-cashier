@@ -1,13 +1,15 @@
+import { SearchInput } from "@/components/custom/FormElement";
 import {
-    SearchInput,
-    SelectSearchInput,
-} from "@/components/custom/FormElement";
-import {
-    humanRole,
+    handleElipsisText,
     inputDebounce,
     ymdToIdDate,
 } from "@/components/helper/helper";
-import { Button } from "@/components/ui/button";
+import AppLayout from "@/partials/AppLayout";
+import { PageTitle } from "@/Partials/PageTitle";
+import { AdminCustomerIndexProps } from "@/types/customer";
+import { router, useForm } from "@inertiajs/react";
+import React, { useEffect, useRef } from "react";
+import AdminCustomerCreate from "./ModalCreate";
 import {
     Table,
     TableBody,
@@ -16,29 +18,21 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import AppLayout from "@/partials/AppLayout";
-import { PageTitle } from "@/Partials/PageTitle";
-import { AdminUserIndexProps } from "@/types/user";
-import { router, useForm } from "@inertiajs/react";
-import { SearchXIcon, Trash2 } from "lucide-react";
-import { useEffect, useRef } from "react";
-import AdminUserCreate from "./ModalCreate";
-import AdminUserEdit from "./ModalEdit";
-import AdminUserModalResetPassword from "./ModalResetPassword";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import AdminCustomerEdit from "./ModalEdit";
 import EmptyTable from "@/components/custom/EmptyTable";
 
-const AdminUserIndex = ({
+const CashierCustomerIndex = ({
     title,
     description,
-    users,
+    customers,
     search,
-    role,
-}: AdminUserIndexProps) => {
+}: AdminCustomerIndexProps) => {
     const firstRender = useRef(true);
     const { data: filterData, setData: setFilterData } = useForm({
         search: search || "",
-        role: role || "",
     });
 
     const handleFilter = (key: keyof typeof filterData, value: string) => {
@@ -47,24 +41,23 @@ const AdminUserIndex = ({
 
     const debounceSearch = inputDebounce((data: typeof filterData) => {
         router.get(
-            "/admin/users",
+            "/cashier/customers",
             {
                 search: data.search,
-                role: data.role,
             },
             {
                 preserveState: true,
                 replace: true,
-                only: ["users"],
+                only: ["customers"],
             }
         );
     });
 
     const handleDelete = (id: number) => {
-        router.delete(`/admin/users/${id}`, {
+        router.delete(`/cashier/customers/${id}`, {
             preserveScroll: true,
             replace: true,
-            only: ["users"],
+            only: ["customers"],
         });
     };
 
@@ -78,37 +71,17 @@ const AdminUserIndex = ({
     return (
         <AppLayout>
             <PageTitle title={title} description={description} />
+
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2 w-full">
                     <SearchInput
-                        placeholder={`Cari berdasarkan NIP atau nama karyawan`}
+                        placeholder={`Cari nama, no telp, atau alamat pelanggan`}
                         className="lg:max-w-sm w-full"
                         onChange={(e) => handleFilter("search", e.target.value)}
                         value={filterData.search || ""}
                     />
-                    <div className="">
-                        <SelectSearchInput
-                            className="w-full"
-                            placeholder="Pilih Role"
-                            value={filterData.role || ""}
-                            options={[
-                                {
-                                    label: "Kasir",
-                                    value: "CASHIER",
-                                },
-                                {
-                                    label: "Administrator",
-                                    value: "ADMIN",
-                                },
-                            ]}
-                            onChange={(value) =>
-                                handleFilter("role", value.toString())
-                            }
-                            removeValue={() => handleFilter("role", "")}
-                        />
-                    </div>
                 </div>
-                <AdminUserCreate />
+                <AdminCustomerCreate />
             </div>
 
             <div className="rounded-md border">
@@ -119,16 +92,16 @@ const AdminUserIndex = ({
                                 #
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Username
+                                Nama Lengkap
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Nama
+                                No Telepon
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Role
+                                Alamat
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Bergabung sejak
+                                Terdata Sejak
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
                                 Aksi
@@ -136,20 +109,24 @@ const AdminUserIndex = ({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {users.data.map((user, index) => (
-                            <TableRow key={user.id}>
+                        {customers.data.map((customer, index) => (
+                            <TableRow key={customer.id}>
                                 <TableCell>{index + 1}</TableCell>
-                                <TableCell>{user.username}</TableCell>
-                                <TableCell>{user.name}</TableCell>
-                                <TableCell>{humanRole(user.role)}</TableCell>
+                                <TableCell>{customer.name}</TableCell>
+                                <TableCell>{customer.phone}</TableCell>
                                 <TableCell>
-                                    {ymdToIdDate(user.created_at)}
+                                    {handleElipsisText(
+                                        customer.address || "",
+                                        40
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {ymdToIdDate(customer?.created_at)}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <AdminUserEdit user={user} />
-                                        <AdminUserModalResetPassword
-                                            id={user.id}
+                                        <AdminCustomerEdit
+                                            customer={customer}
                                         />
                                         <ConfirmDialog
                                             triggerNode={
@@ -162,19 +139,22 @@ const AdminUserIndex = ({
                                                     </Button>
                                                 </span>
                                             }
-                                            title="Hapus User"
-                                            description="Menghapus user menyebabkan kehilangan akses terhadap sistem. Apakah anda yakin ?"
+                                            title="Hapus Pelanggan"
+                                            description="Menghapus pelanggan menyebabkan kehilangan riwayat transaksi pelanggan. Apakah anda yakin ?"
                                             type="danger"
                                             confirmAction={() =>
-                                                handleDelete(user.id)
+                                                handleDelete(customer.id)
                                             }
                                         />
                                     </div>
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {users.data.length == 0 && (
-                            <EmptyTable colSpan={6} message="User tidak ada" />
+                        {customers.data.length == 0 && (
+                            <EmptyTable
+                                colSpan={6}
+                                message="Pelanggan tidak ada"
+                            />
                         )}
                     </TableBody>
                 </Table>
@@ -183,4 +163,4 @@ const AdminUserIndex = ({
     );
 };
 
-export default AdminUserIndex;
+export default CashierCustomerIndex;

@@ -1,67 +1,64 @@
-import { ErrorInput, SelectSearchInput } from "@/components/custom/FormElement";
+import { useForm } from "@inertiajs/react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { User } from "@/types/user";
-import { useForm } from "@inertiajs/react";
 import { CircleX, Loader, Pencil, Save } from "lucide-react";
-import React from "react";
+import { ErrorInput } from "@/components/custom/FormElement";
+import { Customer } from "@/types/customer";
 
-const AdminUserEdit = ({ user }: { user: User }) => {
+const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
     const {
         data,
         setData,
         put,
         processing,
         errors,
-        clearErrors,
-        setError,
         reset,
+        setError,
+        clearErrors,
     } = useForm({
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        role: user.role,
+        id: customer.id,
+        name: customer.name || "",
+        phone: customer.phone || "",
+        address: customer.address || "",
     });
-
     const handleChangeInput = (key: keyof typeof data, value: string) => {
         setData(key, value);
     };
-
     const validateForm = (): boolean => {
         let isValid = true;
         clearErrors();
-        if (!data.username || data.username.trim() === "") {
-            setError("username", "Username wajib diisi");
-            isValid = false;
-        }
         if (!data.name || data.name.trim() === "") {
             setError("name", "Nama Lengkap wajib diisi");
             isValid = false;
         }
-        if (!data.role || data.role.trim() === "") {
-            setError("role", "Role wajib dipilih");
+        if (!data.phone || data.phone.trim() === "") {
+            setError("phone", "No Telp wajib diisi");
+            isValid = false;
+        }
+        if (!data.address || data.address.trim() === "") {
+            setError("address", "Alamat wajib diisi");
             isValid = false;
         }
         return isValid;
     };
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
-        put("/admin/users/" + user.id, {
+        put(`/admin/customers/${data.id}`, {
             replace: true,
             preserveState: true,
-            only: ["users"],
+            only: ["customers"],
             onSuccess: () => reset(),
         });
     };
@@ -74,32 +71,11 @@ const AdminUserEdit = ({ user }: { user: User }) => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-7xl">
                 <DialogHeader>
-                    <DialogTitle>Edit User</DialogTitle>
+                    <DialogTitle>Edit Pelanggan</DialogTitle>
                     <DialogDescription className="mb-3">
-                        Silakan edit data user yang ada
+                        Silakan ubah data pelanggan sesuai kebutuhan
                     </DialogDescription>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        <div className="flex flex-col w-full">
-                            <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                                Username
-                            </label>
-                            <Input
-                                type="text"
-                                placeholder="Masukkan Username"
-                                className="w-full"
-                                disabled={processing}
-                                value={data.username || ""}
-                                onChange={(e) =>
-                                    handleChangeInput(
-                                        "username",
-                                        e.target.value
-                                    )
-                                }
-                            />
-                            {errors.username && (
-                                <ErrorInput error={errors.username} />
-                            )}
-                        </div>
                         <div className="flex flex-col w-full">
                             <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
                                 Nama Lengkap
@@ -118,34 +94,38 @@ const AdminUserEdit = ({ user }: { user: User }) => {
                         </div>
                         <div className="flex flex-col w-full">
                             <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                                Role
+                                No Telepon
                             </label>
-                            <div className="">
-                                <SelectSearchInput
-                                    placeholder="Pilih Role"
-                                    options={[
-                                        {
-                                            label: "Administrator",
-                                            value: "ADMIN",
-                                        },
-                                        {
-                                            label: "Kasir",
-                                            value: "CASHIER",
-                                        },
-                                    ]}
-                                    value={data.role || ""}
-                                    onChange={(value) =>
-                                        handleChangeInput(
-                                            "role",
-                                            value.toString()
-                                        )
-                                    }
-                                    removeValue={() =>
-                                        handleChangeInput("role", "")
-                                    }
-                                />
-                            </div>
-                            {errors.role && <ErrorInput error={errors.role} />}
+                            <Input
+                                type="text"
+                                placeholder="Masukkan No Telepon"
+                                className="w-full"
+                                disabled={processing}
+                                value={data.phone || ""}
+                                onChange={(e) =>
+                                    handleChangeInput("phone", e.target.value)
+                                }
+                            />
+                            {errors.phone && (
+                                <ErrorInput error={errors.phone} />
+                            )}
+                        </div>
+                        <div className="flex flex-col w-full">
+                            <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                Alamat
+                            </label>
+                            <textarea
+                                placeholder="Masukkan Alamat"
+                                className="w-full rounded-md border px-3 py-2"
+                                disabled={processing}
+                                value={data.address || ""}
+                                onChange={(e) =>
+                                    handleChangeInput("address", e.target.value)
+                                }
+                            />
+                            {errors.address && (
+                                <ErrorInput error={errors.address} />
+                            )}
                         </div>
                     </div>
                 </DialogHeader>
@@ -179,4 +159,4 @@ const AdminUserEdit = ({ user }: { user: User }) => {
     );
 };
 
-export default AdminUserEdit;
+export default AdminCustomerEdit;

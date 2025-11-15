@@ -30,7 +30,9 @@ const ConfirmDialog = ({
 }: ConfirmDialogProps) => {
     return (
         <Dialog>
-            <DialogTrigger disabled={disabled}>{triggerNode}</DialogTrigger>
+            <DialogTrigger asChild disabled={disabled}>
+                {triggerNode}
+            </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
