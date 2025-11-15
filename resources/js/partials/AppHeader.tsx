@@ -12,6 +12,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import SignoutMenu from "@/components/custom/SignoutMenu";
+import { humanRole } from "@/components/helper/helper";
 interface AppHeaderProps {
     classNames?: string;
     name: string;
@@ -19,7 +20,6 @@ interface AppHeaderProps {
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({ classNames, name, role }) => {
-    const humanRole = role === "ADMIN" ? "Administrator" : "Cashier";
     return (
         <header
             className={cn(
@@ -36,7 +36,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ classNames, name, role }) => {
                         <div className="flex text-sm flex-col justify-center items-end">
                             <span className="">{name}</span>
                             <span className="text-xs font-semibold">
-                                {humanRole}
+                                {humanRole(role)}
                             </span>
                         </div>
                         <Avatar className="border-2 border-solid transition-all border-yellow-500">

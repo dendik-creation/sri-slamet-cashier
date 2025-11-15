@@ -74,6 +74,17 @@ const cashierNavs: NavItems = [
         url: "/cashier/dashboard",
         icon: Grid2X2,
     },
+    {
+        type: "splitter",
+        title: "Data Master",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Data Pelanggan",
+        url: "/cashier/customers",
+        icon: ContactRound,
+    },
 ];
 
 export const sidebarNavs = {

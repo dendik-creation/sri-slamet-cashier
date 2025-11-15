@@ -12,25 +12,23 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { CircleX, Loader, Pencil, Save } from "lucide-react";
+import { CircleFadingPlus, CircleX, Loader, Save } from "lucide-react";
 import { ErrorInput } from "@/components/custom/FormElement";
-import { Customer } from "@/types/customer";
 
-const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
+const CashierCustomerCreate = () => {
     const {
         data,
         setData,
-        put,
+        post,
         processing,
         errors,
         reset,
         setError,
         clearErrors,
     } = useForm({
-        id: customer.id,
-        name: customer.name || "",
-        phone: customer.phone || "",
-        address: customer.address || "",
+        name: "",
+        phone: "",
+        address: "",
     });
     const handleChangeInput = (key: keyof typeof data, value: string) => {
         setData(key, value);
@@ -55,7 +53,7 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
-        put(`/admin/customers/${data.id}`, {
+        post("/cashier/customers", {
             replace: true,
             preserveState: true,
             only: ["customers"],
@@ -65,15 +63,16 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant={"blue"} size={"icon"}>
-                    <Pencil />
+                <Button variant={"yellow"}>
+                    <CircleFadingPlus />
+                    <span>Tambah Pelanggan</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-7xl">
                 <DialogHeader>
-                    <DialogTitle>Edit Pelanggan</DialogTitle>
+                    <DialogTitle>Tambah Pelanggan</DialogTitle>
                     <DialogDescription className="mb-3">
-                        Silakan ubah data pelanggan sesuai kebutuhan
+                        Silakan isi data pelanggan baru
                     </DialogDescription>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                         <div className="flex flex-col w-full">
@@ -140,7 +139,7 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
                         </Button>
                     </DialogClose>
                     <Button
-                        variant="blue"
+                        variant="yellow"
                         disabled={processing}
                         onClick={handleSubmit}
                         className="flex items-center gap-2"
@@ -159,4 +158,4 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
     );
 };
 
-export default AdminCustomerEdit;
+export default CashierCustomerCreate;

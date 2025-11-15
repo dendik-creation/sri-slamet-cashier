@@ -20,12 +20,13 @@ import AppLayout from "@/partials/AppLayout";
 import { PageTitle } from "@/Partials/PageTitle";
 import { AdminUserIndexProps } from "@/types/user";
 import { router, useForm } from "@inertiajs/react";
-import { Trash2 } from "lucide-react";
+import { SearchXIcon, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import AdminUserCreate from "./ModalCreate";
 import AdminUserEdit from "./ModalEdit";
 import AdminUserModalResetPassword from "./ModalResetPassword";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
+import EmptyTable from "@/components/custom/EmptyTable";
 
 const AdminUserIndex = ({
     title,
@@ -172,6 +173,9 @@ const AdminUserIndex = ({
                                 </TableCell>
                             </TableRow>
                         ))}
+                        {users.data.length == 0 && (
+                            <EmptyTable colSpan={6} message="User tidak ada" />
+                        )}
                     </TableBody>
                 </Table>
             </div>

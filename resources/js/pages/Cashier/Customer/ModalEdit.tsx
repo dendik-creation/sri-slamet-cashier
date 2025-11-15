@@ -16,7 +16,7 @@ import { CircleX, Loader, Pencil, Save } from "lucide-react";
 import { ErrorInput } from "@/components/custom/FormElement";
 import { Customer } from "@/types/customer";
 
-const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
+const CashierCustomerEdit = ({ customer }: { customer: Customer }) => {
     const {
         data,
         setData,
@@ -55,7 +55,7 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
-        put(`/admin/customers/${data.id}`, {
+        put(`/cashier/customers/${data.id}`, {
             replace: true,
             preserveState: true,
             only: ["customers"],
@@ -159,4 +159,4 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
     );
 };
 
-export default AdminCustomerEdit;
+export default CashierCustomerEdit;

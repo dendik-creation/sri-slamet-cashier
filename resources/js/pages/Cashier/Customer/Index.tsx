@@ -24,7 +24,7 @@ import { Trash2 } from "lucide-react";
 import AdminCustomerEdit from "./ModalEdit";
 import EmptyTable from "@/components/custom/EmptyTable";
 
-const AdminCustomerIndex = ({
+const CashierCustomerIndex = ({
     title,
     description,
     customers,
@@ -41,7 +41,7 @@ const AdminCustomerIndex = ({
 
     const debounceSearch = inputDebounce((data: typeof filterData) => {
         router.get(
-            "/admin/customers",
+            "/cashier/customers",
             {
                 search: data.search,
             },
@@ -54,7 +54,7 @@ const AdminCustomerIndex = ({
     });
 
     const handleDelete = (id: number) => {
-        router.delete(`/admin/customers/${id}`, {
+        router.delete(`/cashier/customers/${id}`, {
             preserveScroll: true,
             replace: true,
             only: ["customers"],
@@ -163,4 +163,4 @@ const AdminCustomerIndex = ({
     );
 };
 
-export default AdminCustomerIndex;
+export default CashierCustomerIndex;
