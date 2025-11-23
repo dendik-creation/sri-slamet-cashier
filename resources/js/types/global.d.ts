@@ -6,13 +6,6 @@ interface PaginationLink {
     active: boolean;
 }
 
-// type AppSetting = {
-//     id?: number;
-//     normal_work_hours?: number;
-//     attendance_start?: string;
-//     attendance_end?: string;
-// };
-
 interface PaginationData<T> {
     current_page: number;
     data: T[];

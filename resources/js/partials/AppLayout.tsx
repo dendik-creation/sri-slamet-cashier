@@ -12,8 +12,13 @@ interface AppLayoutProps {
     className?: string;
 }
 
-export default function AppLayout({ children, className }: AppLayoutProps) {
+export const useInertiaShared = () => {
     const { flash } = usePage().props as any;
+    return { flash };
+};
+
+export default function AppLayout({ children, className }: AppLayoutProps) {
+    const { flash } = useInertiaShared();
 
     useEffect(() => {
         if (flash?.success) {

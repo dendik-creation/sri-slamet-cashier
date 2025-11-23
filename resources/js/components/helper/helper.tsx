@@ -67,6 +67,43 @@ export const humanRole = (role: string) => {
     }
 };
 
+export const humanTrxStatus = (status: string) => {
+    switch (status) {
+        case "IN_PROGRESS":
+            return "Dalam Proses";
+        case "COMPLETED":
+            return "Selesai";
+        case "CLOSED":
+            return "Ditutup";
+        default:
+            return "Unknown";
+    }
+};
+
+export const humanTrxItemStatus = (status: string) => {
+    switch (status) {
+        case "ACTIVE":
+            return "Proses";
+        case "REFUNDED":
+            return "Dikembalikan";
+        case "COMPLETED":
+            return "Selesai";
+        default:
+            return "Unknown";
+    }
+};
+
+export const humanPaymentPlan = (method?: string) => {
+    switch (method) {
+        case "FULL_PAID":
+            return "Lunas";
+        case "INSTALLMENT":
+            return "Cicilan";
+        default:
+            return "Unknown";
+    }
+};
+
 export const handleElipsisText = (
     text: string,
     maxLength: number,

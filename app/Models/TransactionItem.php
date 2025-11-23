@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class OrderItem extends Model
+class TransactionItem extends Model
 {
     use SoftDeletes;
     protected $guarded = ['id'];
@@ -13,12 +13,19 @@ class OrderItem extends Model
     // Const
     const STATUS_ACTIVE = 'ACTIVE';
     const STATUS_REFUNDED = 'REFUNDED';
-    const STATUS_CANCELLED = 'CANCELLED';
     const STATUS_REPLACED = 'REPLACED';
+    const STATUS_COMPLETED = 'COMPLETED';
 
     // Casts
     protected $casts = [
-        'order_id' => 'integer',
+        'transaction_id' => 'integer',
         'line_total' => 'integer',
+        'refund_reason' => 'string',
     ];
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'transaction_id');
+    }
+
 }
