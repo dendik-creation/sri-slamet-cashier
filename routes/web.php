@@ -10,6 +10,7 @@ use App\Http\Controllers\admin\UserController as AdminUserController;
 use App\Http\Controllers\admin\CustomerController as AdminCustomerController;
 // Cashiers
 use App\Http\Controllers\cashier\CustomerController as CashierCustomerController;
+use App\Http\Controllers\cashier\TransactionController as CashierTransactionController;
 
 Route::get('/', [AuthController::class, 'signedInStatus'])->name('login');
 Route::prefix('auth')->group(function () {
@@ -53,6 +54,16 @@ Route::prefix('cashier')->middleware(['auth', cashierAccess::class])->group(func
         Route::post('/', [CashierCustomerController::class, 'store'])->name('cashier.customers.store');
         Route::put('/{id}', [CashierCustomerController::class, 'update'])->name('cashier.customers.update');
         Route::delete('/{id}', [CashierCustomerController::class, 'destroy'])->name('cashier.customers.destroy');
+    });
+
+    // Transactions
+    Route::prefix('transactions')->group(function(){
+        Route::get('/', [CashierTransactionController::class, 'index'])->name('cashier.transactions.index');
+        Route::get('/new', [CashierTransactionController::class, 'create'])->name('cashier.transactions.new');
+        Route::post('/new', [CashierTransactionController::class, 'store'])->name('cashier.transactions.store');
+        Route::get('/{id}', [CashierTransactionController::class, 'show'])->name('cashier.transactions.show');
+        Route::get('/edit/{id}', [CashierTransactionController::class, 'edit'])->name('cashier.transactions.edit');
+        Route::put('/update/{id}', [CashierTransactionController::class, 'update'])->name('cashier.transaction.update');
     });
 });
 

@@ -54,16 +54,13 @@ export default function AppSidebar({ role }: { role: "ADMIN" | "CASHIER" }) {
                                             key={item.title}
                                         >
                                             <SidebarMenuButton
-                                                isActive={
-                                                    pathname == item.url ||
-                                                    pathname.includes(item.url)
-                                                }
+                                                isActive={pathname === item.url}
                                                 className="transition-all"
                                                 asChild
                                             >
-                                                <Link
+                                                <a
                                                     href={
-                                                        item.url == pathname
+                                                        item.url === pathname
                                                             ? "#"
                                                             : item.url
                                                     }
@@ -71,7 +68,7 @@ export default function AppSidebar({ role }: { role: "ADMIN" | "CASHIER" }) {
                                                 >
                                                     {Icon && <Icon />}
                                                     <span>{item.title}</span>
-                                                </Link>
+                                                </a>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     );

@@ -31,7 +31,6 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Calendar } from "@/components/ui/calendar";
-// import RichTextEditor from "@mantine/rte";
 import { FilePond, registerPlugin } from "react-filepond";
 import "filepond/dist/filepond.min.css";
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
@@ -42,11 +41,17 @@ registerPlugin(FilePondPluginFileValidateType);
 
 type ErrorInputProps = {
     error: string | null;
+    afterLabel?: boolean;
 };
 
-export function ErrorInput({ error }: ErrorInputProps) {
+export function ErrorInput({ error, afterLabel = false }: ErrorInputProps) {
     return (
-        <p className="text-sm text-red-500 mt-1.5 flex items-center">
+        <p
+            className={cn(
+                "text-sm text-red-500 flex items-center",
+                !afterLabel && "mt-1.5"
+            )}
+        >
             <TriangleAlert size={16} className="me-2" />
             {error}
         </p>
@@ -93,6 +98,7 @@ export function SelectSearchInput({
     placeholder,
     removeValue,
     className,
+    tabIndex = 0,
 }: {
     value: string;
     options: SelectOption[];
@@ -100,6 +106,7 @@ export function SelectSearchInput({
     placeholder?: string;
     removeValue?: () => void;
     className?: string;
+    tabIndex?: number;
 }) {
     const [open, setOpen] = useState(false);
     const triggerRef = React.useRef<HTMLDivElement>(null);
@@ -121,7 +128,7 @@ export function SelectSearchInput({
                     ref={triggerRef}
                     role="combobox"
                     aria-expanded={open}
-                    tabIndex={0}
+                    tabIndex={tabIndex}
                     className={cn(
                         "min-w-full py-1.5 justify-between relative border border-input rounded-md px-4 flex items-center cursor-pointer outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
                         className
@@ -320,6 +327,8 @@ export const DatePickerInput = ({
     mode = "single",
     className,
     disabled = false,
+    withTime = false,
+    tabIndex = 0,
 }: {
     value: string | undefined | { from: Date; to: Date } | string[];
     onChange: (date: string | undefined) => void;
@@ -327,15 +336,23 @@ export const DatePickerInput = ({
     mode: "single" | "multiple" | "range";
     className?: string;
     disabled?: boolean;
+    withTime?: boolean;
+    tabIndex?: number;
 }) => {
-    const formatDate = (date: string | Date | undefined) => {
-        if (!date) return placeholder;
+    const [time, setTime] = React.useState<string>("");
 
+    // Helper to format date and time
+    const formatDateTime = (
+        date: string | Date | undefined,
+        timeStr?: string
+    ) => {
+        if (!date) return placeholder;
         try {
-            // Handle Date object
+            let formattedDate = "";
+            let timePart = timeStr || "";
             if (date instanceof Date) {
                 if (isNaN(date.getTime())) return placeholder;
-                const formattedDate = date
+                formattedDate = date
                     .toLocaleDateString("id-ID", {
                         year: "numeric",
                         month: "2-digit",
@@ -344,33 +361,39 @@ export const DatePickerInput = ({
                     .split("/")
                     .reverse()
                     .join("-");
-                return ymdToIdDate(formattedDate);
-            }
-
-            // Handle string
-            if (typeof date === "string" && date.trim() === "")
+            } else if (typeof date === "string" && date.trim() !== "") {
+                // Ambil hanya bagian tanggal jika withTime
+                const datePart = withTime ? date.split(" ")[0] : date;
+                const parsedDate = new Date(datePart);
+                if (isNaN(parsedDate.getTime())) return placeholder;
+                formattedDate = parsedDate
+                    .toLocaleDateString("id-ID", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                    })
+                    .split("/")
+                    .reverse()
+                    .join("-");
+                // Ambil time dari string jika belum ada timeStr
+                if (withTime && !timeStr && date.includes(" ")) {
+                    timePart = date.split(" ")[1] || "";
+                }
+            } else {
                 return placeholder;
-
-            const parsedDate = new Date(date);
-            if (isNaN(parsedDate.getTime())) return placeholder;
-
-            const formattedDate = parsedDate
-                .toLocaleDateString("id-ID", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                })
-                .split("/")
-                .reverse()
-                .join("-");
-
-            return ymdToIdDate(formattedDate);
+            }
+            formattedDate = ymdToIdDate(formattedDate) || "";
+            if (withTime && timePart) {
+                return `${formattedDate} ${timePart}`;
+            }
+            return formattedDate;
         } catch (error) {
             console.warn("Error formatting date:", error);
             return placeholder;
         }
     };
 
+    // Handle date selection
     const handleSelect = (
         date: Date | Date[] | { from: Date; to: Date } | undefined
     ) => {
@@ -378,7 +401,6 @@ export const DatePickerInput = ({
             onChange(undefined);
             return;
         }
-
         try {
             const formatSingleDate = (d: Date) => {
                 if (!d || isNaN(d.getTime())) return "";
@@ -392,10 +414,20 @@ export const DatePickerInput = ({
                     .reverse()
                     .join("-");
             };
-
             if (mode === "single") {
                 const formattedDate = formatSingleDate(date as Date);
-                onChange(formattedDate || undefined);
+                if (withTime) {
+                    // Jika time sudah ada, gabungkan
+                    onChange(
+                        formattedDate
+                            ? time
+                                ? `${formattedDate} ${time}`
+                                : `${formattedDate}`
+                            : undefined
+                    );
+                } else {
+                    onChange(formattedDate || undefined);
+                }
             } else if (mode === "multiple" && Array.isArray(date)) {
                 const formattedDates = date
                     .map(formatSingleDate)
@@ -438,7 +470,6 @@ export const DatePickerInput = ({
                 typeof value === "object" &&
                 "from" in value
             ) {
-                // Validate dates
                 if (
                     value.from &&
                     value.to &&
@@ -449,7 +480,6 @@ export const DatePickerInput = ({
                 }
                 return undefined;
             } else if (mode === "range" && typeof value === "string") {
-                // Parse string format "YYYY-MM-DD - YYYY-MM-DD"
                 const [startStr, endStr] = value.split(" - ");
                 if (startStr && endStr) {
                     const fromDate = new Date(startStr.trim());
@@ -465,8 +495,10 @@ export const DatePickerInput = ({
                     }
                 }
             } else if (mode === "single" && typeof value === "string") {
-                if (value.trim() === "") return undefined;
-                const parsedDate = new Date(value);
+                // Remove time part if exists
+                const datePart = value.split(" ")[0];
+                if (datePart.trim() === "") return undefined;
+                const parsedDate = new Date(datePart);
                 if (!isNaN(parsedDate.getTime())) {
                     return parsedDate;
                 }
@@ -478,7 +510,7 @@ export const DatePickerInput = ({
         return undefined;
     };
 
-    // Compute a sensible default month for the calendar (so users can jump directly)
+    // Compute a sensible default month for the calendar
     const getDefaultMonth = () => {
         const selectedVal = getSelectedValue();
         try {
@@ -494,15 +526,30 @@ export const DatePickerInput = ({
                 if (!isNaN(selectedVal.getTime())) return selectedVal;
             }
         } catch (e) {
-            // noop: fallback to today
+            // noop
         }
         return new Date();
     };
+
+    // Extract time from value if withTime enabled
+    React.useEffect(() => {
+        if (withTime && typeof value === "string") {
+            const parts = value.split(" ");
+            if (parts.length > 1 && /^\d{2}:\d{2}/.test(parts[1])) {
+                setTime(parts[1]);
+            } else {
+                setTime("");
+            }
+        } else if (!withTime) {
+            setTime("");
+        }
+    }, [value, withTime]);
 
     return (
         <Popover>
             <PopoverTrigger disabled={disabled} asChild>
                 <button
+                    tabIndex={tabIndex}
                     className={cn(
                         buttonVariants({ variant: "outline" }),
                         "w-full pl-3 h-10 text-left font-normal",
@@ -514,7 +561,8 @@ export const DatePickerInput = ({
                     typeof value === "object" &&
                     "from" in value ? (
                         <span>
-                            {formatDate(value.from)} - {formatDate(value.to)}
+                            {formatDateTime(value.from)} -{" "}
+                            {formatDateTime(value.to)}
                         </span>
                     ) : mode === "range" && typeof value === "string" ? (
                         <span>
@@ -530,7 +578,20 @@ export const DatePickerInput = ({
                                 : placeholder}
                         </span>
                     ) : (
-                        <span>{formatDate(value as string)}</span>
+                        <span>
+                            {withTime
+                                ? formatDateTime(
+                                      typeof value === "string"
+                                          ? value
+                                          : undefined,
+                                      time
+                                  )
+                                : formatDateTime(
+                                      typeof value === "string"
+                                          ? value
+                                          : undefined
+                                  )}
+                        </span>
                     )}
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </button>
@@ -540,42 +601,57 @@ export const DatePickerInput = ({
                     mode={mode as any}
                     selected={getSelectedValue() as any}
                     onSelect={handleSelect as any}
-                    /* Enable fast navigation to old years without month-by-month clicks */
                     captionLayout="dropdown"
                     fromYear={1900}
                     toYear={new Date().getFullYear() + 10}
                     defaultMonth={getDefaultMonth()}
                     initialFocus
                 />
+                {withTime && mode === "single" && (
+                    <div className="p-3 border-t flex items-center gap-2">
+                        <label
+                            htmlFor="time-input"
+                            className="text-sm text-gray-600"
+                        >
+                            Waktu:
+                        </label>
+                        <input
+                            id="time-input"
+                            type="time"
+                            value={time}
+                            onChange={(e) => {
+                                setTime(e.target.value);
+                                // Update value with new time
+                                const selectedDate = getSelectedValue();
+                                if (
+                                    selectedDate instanceof Date &&
+                                    !isNaN(selectedDate.getTime())
+                                ) {
+                                    const formattedDate = selectedDate
+                                        .toLocaleDateString("id-ID", {
+                                            year: "numeric",
+                                            month: "2-digit",
+                                            day: "2-digit",
+                                        })
+                                        .split("/")
+                                        .reverse()
+                                        .join("-");
+                                    onChange(
+                                        e.target.value
+                                            ? `${formattedDate} ${e.target.value}`
+                                            : formattedDate
+                                    );
+                                }
+                            }}
+                            className="border rounded px-2 py-1 text-sm"
+                            disabled={disabled}
+                        />
+                    </div>
+                )}
             </PopoverContent>
         </Popover>
     );
 };
-
-// export function RichTextEditorInput({
-//     content,
-//     onChange,
-// }: {
-//     content: string;
-//     onChange: (value: string) => void;
-// }) {
-//     return (
-//         <RichTextEditor
-//             value={content}
-//             onChange={onChange}
-//             sticky={true}
-//             className="rounded-md border h-[400px] overflow-auto"
-//             controls={[
-//                 ["bold", "italic", "underline"],
-//                 ["unorderedList", "orderedList"],
-//                 ["h1", "h2", "h3"],
-//                 ["sup", "sub"],
-//                 ["link", "image"],
-//                 ["clean"],
-//             ]}
-//         />
-//     );
-// }
 
 export const PaginatorBuilder = ({
     prevUrl,

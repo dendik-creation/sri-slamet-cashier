@@ -10,7 +10,7 @@ Main features include:
 
 -   Transaction and service management per customer.
 -   Manual job entry with total price per service (no quantity or unit price).
--   Multiple payment methods: cash, down payment (DP), or credit (Kasbon).
+-   Multiple payment methods: cash, instalment (cicilan). (Kasbon removed)
 -   Refunds per service item.
 -   Centralized application settings for name, address, and VAT (PPN).
 

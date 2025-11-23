@@ -13,12 +13,21 @@ class Payment extends Model
     // Const
     const METHOD_CASH = 'CASH';
     const METHOD_TRANSFER = 'TRANSFER';
-    const METHOD_OTHER = 'OTHER';
 
     // Casts
     protected $casts = [
-        'order_id' => 'integer',
+        'transaction_id' => 'integer',
         'recorded_by' => 'integer',
         'amount' => 'integer',
     ];
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'transaction_id');
+    }
+
+    public function recorder()
+    {
+        return $this->belongsTo(User::class, 'recorded_by');
+    }
 }

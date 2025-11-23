@@ -12,4 +12,10 @@ class AppSetting extends Model
     protected $casts = [
         'tax_applied' => 'integer'
     ];
+
+    // Get Setting
+    public static function getSetting()
+    {
+        return self::first();
+    }
 }

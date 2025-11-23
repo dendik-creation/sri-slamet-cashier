@@ -5,6 +5,8 @@ import {
     Grid2X2,
     LucideProps,
     Receipt,
+    ScanBarcode,
+    Tickets,
     Users,
 } from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
@@ -84,6 +86,23 @@ const cashierNavs: NavItems = [
         title: "Data Pelanggan",
         url: "/cashier/customers",
         icon: ContactRound,
+    },
+    {
+        type: "splitter",
+        title: "Data Transaksi",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Transaksi Baru",
+        url: "/cashier/transactions/new",
+        icon: ScanBarcode,
+    },
+    {
+        type: "item",
+        title: "Daftar Transaksi",
+        url: "/cashier/transactions",
+        icon: Tickets,
     },
 ];
 

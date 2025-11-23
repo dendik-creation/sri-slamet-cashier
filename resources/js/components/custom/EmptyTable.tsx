@@ -3,7 +3,7 @@ import { SearchXIcon } from "lucide-react";
 
 type EmptyTableProps = {
     colSpan: number;
-    message: string;
+    message?: string;
 };
 
 const EmptyTable = ({ colSpan, message }: EmptyTableProps) => {
