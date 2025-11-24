@@ -10,7 +10,7 @@ import {
     inputDebounce,
     ymdToIdDate,
 } from "@/components/helper/helper";
-import AppLayout, { useInertiaShared } from "@/partials/AppLayout";
+import AppLayout from "@/partials/AppLayout";
 import { PageTitle } from "@/Partials/PageTitle";
 import { CashierTrxIndexProps } from "@/types/transaction";
 import { Link, router, useForm } from "@inertiajs/react";
@@ -29,7 +29,7 @@ import { Eye, Pencil, Trash2 } from "lucide-react";
 import EmptyTable from "@/components/custom/EmptyTable";
 import { Badge } from "@/components/ui/badge";
 
-const CashierTransactionIndex = ({
+const AdminTransactionIndex = ({
     title,
     description,
     transactions,
@@ -37,7 +37,6 @@ const CashierTransactionIndex = ({
     by_status,
     by_order,
 }: CashierTrxIndexProps) => {
-    const { flash } = useInertiaShared();
     const firstRender = useRef(true);
     const { data: filterData, setData: setFilterData } = useForm({
         search: by_search || "",
@@ -53,7 +52,7 @@ const CashierTransactionIndex = ({
 
     const debounceSearch = inputDebounce((data: typeof filterData) => {
         router.get(
-            "/cashier/transactions",
+            "/admin/transactions",
             {
                 search: data.search,
                 status: data.status,
@@ -68,14 +67,6 @@ const CashierTransactionIndex = ({
             }
         );
     });
-
-    const handleDelete = (id: number) => {
-        router.delete(`/cashier/transactions/${id}`, {
-            preserveScroll: true,
-            replace: true,
-            only: ["transactions"],
-        });
-    };
 
     const buildTrxStatus = (status: string) => {
         const colorByStatus: {
@@ -257,7 +248,7 @@ const CashierTransactionIndex = ({
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         <Link
-                                            href={`/cashier/transactions/${transaction.id}`}
+                                            href={`/admin/transactions/${transaction.id}`}
                                         >
                                             <Button
                                                 size={"icon"}
@@ -266,40 +257,6 @@ const CashierTransactionIndex = ({
                                                 <Eye />
                                             </Button>
                                         </Link>
-                                        {flash?.user?.id ==
-                                            transaction.cashier_id && (
-                                            <Link
-                                                href={`/cashier/transactions/edit/${transaction.id}`}
-                                            >
-                                                <Button
-                                                    size={"icon"}
-                                                    variant={"blue"}
-                                                >
-                                                    <Pencil />
-                                                </Button>
-                                            </Link>
-                                        )}
-                                        {flash?.user?.id ==
-                                            transaction.cashier_id && (
-                                            <ConfirmDialog
-                                                triggerNode={
-                                                    <span>
-                                                        <Button
-                                                            variant={"red"}
-                                                            size={"icon"}
-                                                        >
-                                                            <Trash2 />
-                                                        </Button>
-                                                    </span>
-                                                }
-                                                title="Hapus User"
-                                                description="Menghapus user menyebabkan kehilangan akses terhadap sistem. Apakah anda yakin ?"
-                                                type="danger"
-                                                confirmAction={() =>
-                                                    handleDelete(transaction.id)
-                                                }
-                                            />
-                                        )}
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -325,4 +282,4 @@ const CashierTransactionIndex = ({
     );
 };
 
-export default CashierTransactionIndex;
+export default AdminTransactionIndex;

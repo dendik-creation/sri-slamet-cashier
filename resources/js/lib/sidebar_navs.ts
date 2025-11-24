@@ -57,15 +57,9 @@ const adminNavs: NavItems = [
     },
     {
         type: "item",
-        title: "Pemasukan",
-        url: "/admin/incomes",
+        title: "Laporan Keuangan",
+        url: "/admin/financial-reports",
         icon: BanknoteArrowUp,
-    },
-    {
-        type: "item",
-        title: "Pengeluaran",
-        url: "/admin/expenses",
-        icon: BanknoteArrowDown,
     },
 ];
 

@@ -1,16 +1,19 @@
 <?php
 
-use App\Http\Controllers\global\AuthController;
-use App\Http\Controllers\global\DashboardController;
 use App\Http\Middleware\adminAccess;
 use App\Http\Middleware\cashierAccess;
 use Illuminate\Support\Facades\Route;
 // Admins
 use App\Http\Controllers\admin\UserController as AdminUserController;
 use App\Http\Controllers\admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\admin\TransactionController as AdminTransactionController;
 // Cashiers
 use App\Http\Controllers\cashier\CustomerController as CashierCustomerController;
 use App\Http\Controllers\cashier\TransactionController as CashierTransactionController;
+// Global
+use App\Http\Controllers\global\AuthController;
+use App\Http\Controllers\global\DashboardController;
+use App\Http\Controllers\global\ReportController;
 
 Route::get('/', [AuthController::class, 'signedInStatus'])->name('login');
 Route::prefix('auth')->group(function () {
@@ -41,6 +44,18 @@ Route::prefix('admin')->middleware(['auth', adminAccess::class])->group(function
         Route::post('/', [AdminCustomerController::class, 'store'])->name('admin.customers.store');
         Route::put('/{id}', [AdminCustomerController::class, 'update'])->name('admin.customers.update');
         Route::delete('/{id}', [AdminCustomerController::class, 'destroy'])->name('admin.customers.destroy');
+    });
+
+    // Transactions
+    Route::prefix('transactions')->group(function(){
+        Route::get('/', [AdminTransactionController::class, 'index'])->name('admin.transactions.index');
+        Route::get('/{id}', [AdminTransactionController::class, 'show'])->name('admin.transactions.show');
+    });
+
+    // Financial Report
+    Route::prefix('reports')->group(function(){
+        Route::get('/financial', [ReportController::class, 'adminReportView'])->name('admin.reports.financial.view');
+        Route::post('/financial', [ReportController::class, 'adminReportGenerate'])->name('admin.reports.financial.generate');
     });
 });
 
