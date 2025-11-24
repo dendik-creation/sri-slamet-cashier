@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import SignoutMenu from "@/components/custom/SignoutMenu";
 import { humanRole } from "@/components/helper/helper";
+import ChangePasswordModal from "@/components/custom/ChangePasswordModal";
+import ProfileUpdateModal from "@/components/custom/ProfileUpdateModal";
 interface AppHeaderProps {
     classNames?: string;
     name: string;
@@ -48,14 +50,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({ classNames, name, role }) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                     <DropdownMenuGroup>
-                        <DropdownMenuItem className="flex cursor-pointer items-center gap-2">
-                            <User />
-                            Profil Saya
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex cursor-pointer items-center gap-2">
-                            <Key />
-                            Ubah Password
-                        </DropdownMenuItem>
+                        <ProfileUpdateModal />
+                        <ChangePasswordModal />
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                     <SignoutMenu />

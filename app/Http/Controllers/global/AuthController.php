@@ -66,10 +66,14 @@ class AuthController extends Controller
         ]);
     }
 
-    public function signOut()
+    public function signOut($password_changed = false)
     {
         Auth::logout();
-        Session::flash('success', 'Logout berhasil');
+        if ($password_changed) {
+            Session::flash('success', 'Password berhasil diubah. Silakan login kembali.');
+        }else{
+            Session::flash('success', 'Logout berhasil');
+        }
         return Inertia::location('/auth/signin');
     }
 }

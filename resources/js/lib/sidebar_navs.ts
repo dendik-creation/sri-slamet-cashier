@@ -5,6 +5,7 @@ import {
     LucideProps,
     Receipt,
     ScanBarcode,
+    Settings,
     Tickets,
     Users,
 } from "lucide-react";
@@ -59,6 +60,17 @@ const adminNavs: NavItems = [
         title: "Laporan Keuangan",
         url: "/admin/reports/financial",
         icon: BanknoteArrowUp,
+    },
+    {
+        type: "splitter",
+        title: "Pengaturan",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Pengaturan Sistem",
+        url: "/admin/app-setting",
+        icon: Settings,
     },
 ];
 

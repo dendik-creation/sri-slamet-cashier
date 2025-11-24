@@ -5,6 +5,7 @@ namespace App\Http\Controllers\admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
@@ -24,6 +25,7 @@ class UserController extends Controller
             ->when($role, function ($query, $role) {
                 return $query->where('role', $role);
             })
+            ->whereNot('id', Auth::user()->id)
             ->orderBy('name', 'asc')
             ->paginate(config('custom.pagination_size'));
 

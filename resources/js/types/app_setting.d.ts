@@ -5,3 +5,7 @@ export type AppSetting = {
     branch_address: string;
     tax_applied: number;
 };
+
+export type AdminAppSettingIndexProps = PageTitleProps & {
+    app_setting: AppSetting;
+};
