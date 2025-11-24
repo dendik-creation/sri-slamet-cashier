@@ -20,13 +20,13 @@ const DynamicCard = ({
         <Card className="relative overflow-hidden">
             <CardContent>
                 <div className={`flex items-center space-x-4`}>
-                    <div className={`absolute -bottom-8 -right-10`}>{icon}</div>
                     <div>
                         <h3 className="text-lg font-semibold">{title}</h3>
                         <p className={`text-xl font-bold text-${color}-500`}>
                             {value}
                         </p>
                     </div>
+                    <div className={`absolute -bottom-8 -right-10`}>{icon}</div>
                 </div>
                 {subfooter && (
                     <div className="mt-2 text-sm text-gray-500">

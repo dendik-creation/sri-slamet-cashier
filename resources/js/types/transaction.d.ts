@@ -61,6 +61,69 @@ export type CashierTrxShowProps = PageTitleProps & {
     transaction: Transaction;
 };
 
+// Financial report types (admin)
+export type FinancialReportData = {
+    summary: {
+        total_revenue: number;
+        total_transactions: number;
+        average_transaction: number;
+        total_outstanding: number;
+        total_refunded: number;
+        refunded_items_count: number;
+        period_days: number;
+    };
+    breakdown: {
+        payment_method: Record<string, number>;
+        payment_method_counts: Record<string, number>;
+        status_distribution: Record<string, number>;
+        status_amount_distribution: Record<string, number>;
+        payment_plan_distribution: Record<string, number>;
+        payment_plan_amount_distribution: Record<string, number>;
+    };
+    charts: {
+        daily_revenue: { labels: string[]; series: number[] };
+        daily_transactions: { labels: string[]; series: number[] };
+    };
+    tables: {
+        top_customers: Array<{
+            customer: { id: number; name: string };
+            total: number;
+        }>;
+        top_cashiers: Array<{
+            user: { id: number; name: string };
+            total: number;
+        }>;
+        transactions: Array<{
+            id: number;
+            invoice_code: string;
+            status: string;
+            total: number;
+            amount_due: number;
+            payment_plan: string | null;
+            order_at: string;
+            completed_at: string | null;
+        }>;
+    };
+};
+
+export type FinancialReportFilters = {
+    start_date: string;
+    end_date: string;
+    status: string | null;
+    payment_method: string | null;
+    payment_plan: string | null;
+};
+
+export type AdminFinancialReportIndexProps = PageTitleProps & {
+    filters: FinancialReportFilters;
+    report: FinancialReportData;
+};
+
+export type AdminFinancialReportPrintProps = PageTitleProps & {
+    filters: FinancialReportFilters;
+    report: FinancialReportData;
+};
+
 export type CashierTrxEditProps = PageTitleProps & {
     transaction: Transaction;
     customers: SelectOption[];

@@ -89,6 +89,7 @@ class DashboardController extends Controller
                 'total' => (int) $t->total,
                 'amount_due' => (int) $t->amount_due,
                 'order_at' => $t->order_at,
+                'completed_at' => $t->completed_at,
             ]);
 
         return Inertia::render('Admin/Dashboard', [
@@ -169,6 +170,7 @@ class DashboardController extends Controller
                 'total' => (int) $t->total,
                 'amount_due' => (int) $t->amount_due,
                 'order_at' => $t->order_at,
+                'completed_at' => $t->completed_at,
             ]);
 
         // My recent payments

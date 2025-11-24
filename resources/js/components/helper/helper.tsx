@@ -96,9 +96,20 @@ export const humanTrxItemStatus = (status: string) => {
 export const humanPaymentPlan = (method?: string) => {
     switch (method) {
         case "FULL_PAID":
-            return "Lunas";
+            return "Langsung Lunas";
         case "INSTALLMENT":
             return "Cicilan";
+        default:
+            return "Unknown";
+    }
+};
+
+export const humanPaymentMethod = (method: string) => {
+    switch (method) {
+        case "CASH":
+            return "Tunai";
+        case "TRANSFER":
+            return "Transfer";
         default:
             return "Unknown";
     }

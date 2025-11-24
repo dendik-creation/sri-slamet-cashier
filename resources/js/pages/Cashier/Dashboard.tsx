@@ -4,7 +4,7 @@ import { PageTitle } from "@/Partials/PageTitle";
 import DynamicCard from "@/components/custom/DynamicCard";
 import { Wallet, TrendingUp, ClipboardList, Receipt } from "lucide-react";
 import ReactApexChart from "react-apexcharts";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
     TableBody,
@@ -17,7 +17,10 @@ import {
     floatToIdCurrency,
     ymdToIdDate,
     humanTrxStatus,
+    humanPaymentMethod,
 } from "@/components/helper/helper";
+import EmptyTable from "@/components/custom/EmptyTable";
+import EmptyChart from "@/components/custom/EmptyChart";
 
 type CashierDashboardProps = {
     title: string;
@@ -41,6 +44,7 @@ type CashierDashboardProps = {
             total: number;
             amount_due: number;
             order_at: string;
+            completed_at: string | null;
         }>;
         recentPayments: Array<{
             id: number;
@@ -60,11 +64,22 @@ const CashierDashboard: React.FC<CashierDashboardProps> = ({
     tables,
 }) => {
     const revenue7Options: any = {
-        chart: { type: "line", toolbar: { show: false } },
+        chart: { type: "area", toolbar: { show: false } },
         stroke: { curve: "smooth", width: 3 },
+        dataLabels: { enabled: false },
         xaxis: { categories: charts.revenue7.labels },
         yaxis: { labels: { formatter: (v: number) => floatToIdCurrency(v) } },
         tooltip: { y: { formatter: (v: number) => floatToIdCurrency(v) } },
+        colors: ["#3B82F6"],
+        fill: {
+            type: "gradient",
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.65,
+                opacityTo: 0.9,
+                stops: [0, 90, 100],
+            },
+        },
     };
     const revenue7Series = [
         { name: "Pendapatan", data: charts.revenue7.series },
@@ -72,19 +87,20 @@ const CashierDashboard: React.FC<CashierDashboardProps> = ({
 
     const methodOptions: any = {
         chart: { type: "donut" },
-        labels: charts.paymentMethodMonth.labels,
+        labels: charts.paymentMethodMonth.labels.map((label) =>
+            humanPaymentMethod(label)
+        ),
         legend: { position: "bottom" },
         tooltip: { y: { formatter: (v: number) => floatToIdCurrency(v) } },
+        colors: ["#10B981", "#F59E0B", "#3B82F6", "#EF4444", "#8B5CF6"],
     };
 
     return (
         <AppLayout>
-            <div className="flex items-center justify-between mb-6 px-1">
-                <PageTitle title={title} description={description} />
-            </div>
+            <PageTitle title={title} description={description} />
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <DynamicCard
                     title="Pendapatan Hari Ini"
                     value={floatToIdCurrency(kpis.revenue_today)}
@@ -116,40 +132,57 @@ const CashierDashboard: React.FC<CashierDashboardProps> = ({
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <Card>
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Pendapatan 7 Hari Terakhir
-                        </h3>
-                        <ReactApexChart
-                            options={revenue7Options}
-                            series={revenue7Series}
-                            type="line"
-                            height={320}
-                        />
+                    <CardHeader>
+                        <CardTitle>Pendapatan 7 Hari Terakhir</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Menampilkan transaksi terbaru (7 Hari) yang tercatat
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        {revenue7Series.length > 0 ? (
+                            <ReactApexChart
+                                options={revenue7Options}
+                                series={revenue7Series}
+                                type="area"
+                                height={320}
+                            />
+                        ) : (
+                            <EmptyChart type="AREA" />
+                        )}
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Metode Pembayaran (Bulan Ini)
-                        </h3>
-                        <ReactApexChart
-                            options={methodOptions}
-                            series={charts.paymentMethodMonth.series}
-                            type="donut"
-                            height={320}
-                        />
+                    <CardHeader>
+                        <CardTitle>Metode Pembayaran item Bulan Ini</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Menampilkan metode pembayaran item favorit bulan ini
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        {charts.paymentMethodMonth.series.length > 0 ? (
+                            <ReactApexChart
+                                options={methodOptions}
+                                series={charts.paymentMethodMonth.series}
+                                type="donut"
+                                height={320}
+                            />
+                        ) : (
+                            <EmptyChart type="DONUT" />
+                        )}
                     </CardContent>
                 </Card>
             </div>
 
             {/* Recent Transactions & Payments */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-2">
                 <Card>
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Transaksi Terbaru
-                        </h3>
+                    <CardHeader>
+                        <CardTitle>Transaksi Terbaru</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Menampilkan transaksi terbaru yang tercatat
+                        </p>
+                    </CardHeader>
+                    <CardContent>
                         <div className="rounded-md border overflow-auto">
                             <Table>
                                 <TableHeader>
@@ -216,11 +249,7 @@ const CashierDashboard: React.FC<CashierDashboardProps> = ({
                                             )
                                         )
                                     ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={7}>
-                                                Tidak ada data
-                                            </TableCell>
-                                        </TableRow>
+                                        <EmptyTable colSpan={7} />
                                     )}
                                 </TableBody>
                             </Table>
@@ -228,10 +257,13 @@ const CashierDashboard: React.FC<CashierDashboardProps> = ({
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Pembayaran Terbaru
-                        </h3>
+                    <CardHeader>
+                        <CardTitle>Pembayaran Item Terbaru</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Menampilkan proses pembayaran terbaru yang tercatat
+                        </p>
+                    </CardHeader>
+                    <CardContent>
                         <div className="rounded-md border overflow-auto">
                             <Table>
                                 <TableHeader>
@@ -279,11 +311,7 @@ const CashierDashboard: React.FC<CashierDashboardProps> = ({
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={5}>
-                                                Tidak ada data
-                                            </TableCell>
-                                        </TableRow>
+                                        <EmptyTable colSpan={5} />
                                     )}
                                 </TableBody>
                             </Table>
