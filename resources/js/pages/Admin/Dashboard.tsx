@@ -11,7 +11,7 @@ import {
     PieChart,
 } from "lucide-react";
 import ReactApexChart from "react-apexcharts";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
     TableBody,
@@ -24,7 +24,10 @@ import {
     floatToIdCurrency,
     ymdToIdDate,
     humanTrxStatus,
+    humanPaymentMethod,
 } from "@/components/helper/helper";
+import EmptyTable from "@/components/custom/EmptyTable";
+import EmptyChart from "@/components/custom/EmptyChart";
 
 type AdminDashboardProps = {
     title: string;
@@ -51,6 +54,7 @@ type AdminDashboardProps = {
             total: number;
             amount_due: number;
             order_at: string;
+            completed_at: string | null;
         }>;
         topCashiers: Array<{
             user: { id: number; name: string } | null;
@@ -71,8 +75,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     tables,
 }) => {
     const revenue7Options: any = {
-        chart: { type: "line", toolbar: { show: false } },
+        chart: { type: "area", toolbar: { show: false } },
         stroke: { curve: "smooth", width: 3 },
+        dataLabels: { enabled: false },
         xaxis: { categories: charts.revenue7.labels },
         yaxis: { labels: { formatter: (v: number) => floatToIdCurrency(v) } },
         tooltip: { y: { formatter: (v: number) => floatToIdCurrency(v) } },
@@ -83,13 +88,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const methodOptions: any = {
         chart: { type: "donut" },
-        labels: charts.paymentMethodMonth.labels,
+        labels: charts.paymentMethodMonth.labels.map((label) =>
+            humanPaymentMethod(label)
+        ),
         legend: { position: "bottom" },
         tooltip: { y: { formatter: (v: number) => floatToIdCurrency(v) } },
     };
     const statusOptions: any = {
         chart: { type: "pie" },
-        labels: charts.statusDistribution.labels,
+        labels: charts.statusDistribution.labels.map((label) =>
+            humanTrxStatus(label)
+        ),
         legend: { position: "bottom" },
     };
 
@@ -138,56 +147,80 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 <Card className="col-span-1 lg:col-span-2">
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Pendapatan 7 Hari Terakhir
-                        </h3>
-                        <ReactApexChart
-                            options={revenue7Options}
-                            series={revenue7Series}
-                            type="line"
-                            height={320}
-                        />
+                    <CardHeader>
+                        <CardTitle>Pendapatan 7 Hari Terakhir</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Menampilkan pendapatan harian selama 7 hari terakhir
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        {revenue7Series.length > 0 ? (
+                            <ReactApexChart
+                                options={revenue7Options}
+                                series={revenue7Series}
+                                type="area"
+                                height={320}
+                            />
+                        ) : (
+                            <EmptyChart type="AREA" />
+                        )}
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Metode Pembayaran (Bulan Ini)
-                        </h3>
-                        <ReactApexChart
-                            options={methodOptions}
-                            series={charts.paymentMethodMonth.series}
-                            type="donut"
-                            height={320}
-                        />
+                    <CardHeader>
+                        <CardTitle>
+                            Metode Pembayaran Item (Bulan Ini)
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Menampilkan metode pembayaran item favorit selama
+                            bulan ini
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        {charts.paymentMethodMonth.series.length > 0 ? (
+                            <ReactApexChart
+                                options={methodOptions}
+                                series={charts.paymentMethodMonth.series}
+                                type="donut"
+                                height={320}
+                            />
+                        ) : (
+                            <EmptyChart type="DONUT" />
+                        )}
                     </CardContent>
                 </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 <Card>
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Distribusi Status Transaksi
-                        </h3>
-                        <ReactApexChart
-                            options={statusOptions}
-                            series={charts.statusDistribution.series}
-                            type="pie"
-                            height={300}
-                        />
+                    <CardHeader>
+                        <CardTitle>Distribusi Status Transaksi</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Variasi status transaksi yang tercatat
+                        </p>
+                    </CardHeader>
+                    <CardContent>
+                        {charts.statusDistribution.series.length > 0 ? (
+                            <ReactApexChart
+                                options={statusOptions}
+                                series={charts.statusDistribution.series}
+                                type="pie"
+                                height={300}
+                            />
+                        ) : (
+                            <EmptyChart type="PIE" />
+                        )}
                     </CardContent>
                 </Card>
 
                 <Card className="lg:col-span-2">
-                    <CardContent className="p-4 md:p-5">
-                        <div className="flex items-center gap-2 mb-3">
-                            <PieChart className="text-slate-400" />
-                            <h3 className="font-semibold">
-                                Top Kasir (Bulan Ini)
-                            </h3>
-                        </div>
+                    <CardHeader>
+                        <CardTitle>Top Kasir Bulan ini</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Top kasir berdasarkan total transaksi bulan ini
+                        </p>
+                    </CardHeader>
+                    <CardContent>
                         <div className="rounded-md border">
                             <Table>
                                 <TableHeader>
@@ -219,11 +252,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={3}>
-                                                Tidak ada data
-                                            </TableCell>
-                                        </TableRow>
+                                        <EmptyTable colSpan={3} />
                                     )}
                                 </TableBody>
                             </Table>
@@ -233,12 +262,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* Recent Transactions & Top Customers */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Transaksi Terbaru
-                        </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Transaksi Terbaru</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Menampilkan transaksi terbaru yang tercatat
+                        </p>
+                    </CardHeader>
+                    <CardContent>
                         <div className="rounded-md border overflow-auto">
                             <Table>
                                 <TableHeader>
@@ -262,7 +294,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             Sisa
                                         </TableHead>
                                         <TableHead className="bg-stone-200 font-semibold">
-                                            Masuk
+                                            Waktu Perbaikan
                                         </TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -299,17 +331,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                     <TableCell>
                                                         {ymdToIdDate(
                                                             t.order_at
+                                                        )}{" "}
+                                                        -{" "}
+                                                        {ymdToIdDate(
+                                                            t.completed_at ||
+                                                                "-"
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
                                             )
                                         )
                                     ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={7}>
-                                                Tidak ada data
-                                            </TableCell>
-                                        </TableRow>
+                                        <EmptyTable colSpan={7} />
                                     )}
                                 </TableBody>
                             </Table>
@@ -317,11 +350,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardContent className="p-4 md:p-5">
-                        <h3 className="font-semibold mb-3">
-                            Top Pelanggan (Bulan Ini)
-                        </h3>
+                <Card className="lg:col-span-1">
+                    <CardHeader>
+                        <CardTitle>Top Pelanggan Bulan ini</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Top pelanggan berdasarkan total transaksi bulan ini
+                        </p>
+                    </CardHeader>
+                    <CardContent>
                         <div className="rounded-md border overflow-auto">
                             <Table>
                                 <TableHeader>
@@ -359,11 +395,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={4}>
-                                                Tidak ada data
-                                            </TableCell>
-                                        </TableRow>
+                                        <EmptyTable colSpan={4} />
                                     )}
                                 </TableBody>
                             </Table>

@@ -54,8 +54,10 @@ Route::prefix('admin')->middleware(['auth', adminAccess::class])->group(function
 
     // Financial Report
     Route::prefix('reports')->group(function(){
-        Route::get('/financial', [ReportController::class, 'adminReportView'])->name('admin.reports.financial.view');
-        Route::post('/financial', [ReportController::class, 'adminReportGenerate'])->name('admin.reports.financial.generate');
+        // Same-page filtering (GET or POST) returns Index view
+        Route::match(['get','post'],'/financial', [ReportController::class, 'adminReportView'])->name('admin.reports.financial.view');
+        // Print view (GET) consumes current filters via query string
+        Route::get('/financial/print', [ReportController::class, 'adminReportGenerate'])->name('admin.reports.financial.print');
     });
 });
 
@@ -73,7 +75,7 @@ Route::prefix('cashier')->middleware(['auth', cashierAccess::class])->group(func
 
     // Transactions
     Route::prefix('transactions')->group(function(){
-        Route::get('/', [CashierTransactionController::class, 'index'])->name('cashier.transactions.index');
+        Route::get('/records', [CashierTransactionController::class, 'index'])->name('cashier.transactions.index');
         Route::get('/new', [CashierTransactionController::class, 'create'])->name('cashier.transactions.new');
         Route::post('/new', [CashierTransactionController::class, 'store'])->name('cashier.transactions.store');
         Route::get('/{id}', [CashierTransactionController::class, 'show'])->name('cashier.transactions.show');

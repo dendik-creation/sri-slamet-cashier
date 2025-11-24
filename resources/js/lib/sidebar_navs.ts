@@ -1,5 +1,4 @@
 import {
-    BanknoteArrowDown,
     BanknoteArrowUp,
     ContactRound,
     Grid2X2,
@@ -58,7 +57,7 @@ const adminNavs: NavItems = [
     {
         type: "item",
         title: "Laporan Keuangan",
-        url: "/admin/financial-reports",
+        url: "/admin/reports/financial",
         icon: BanknoteArrowUp,
     },
 ];
@@ -95,7 +94,7 @@ const cashierNavs: NavItems = [
     {
         type: "item",
         title: "Daftar Transaksi",
-        url: "/cashier/transactions",
+        url: "/cashier/transactions/records",
         icon: Tickets,
     },
 ];

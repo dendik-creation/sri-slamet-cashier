@@ -45,6 +45,7 @@ const CashierTransactionIndex = ({
         order: by_order || "",
         start_date_in: "",
         end_date_in: "",
+        amount_due: "",
     });
 
     const handleFilter = (key: keyof typeof filterData, value: string) => {
@@ -53,13 +54,14 @@ const CashierTransactionIndex = ({
 
     const debounceSearch = inputDebounce((data: typeof filterData) => {
         router.get(
-            "/cashier/transactions",
+            "/cashier/transactions/records",
             {
                 search: data.search,
                 status: data.status,
                 order: data.order,
                 start_date_in: data.start_date_in,
                 end_date_in: data.end_date_in,
+                amount_due: data.amount_due,
             },
             {
                 preserveState: true,
@@ -182,6 +184,27 @@ const CashierTransactionIndex = ({
                         }}
                     />
                 </div>
+                <div className="">
+                    <SelectSearchInput
+                        className="w-full"
+                        placeholder="Pilih Status Tagihan"
+                        value={filterData.amount_due || ""}
+                        options={[
+                            {
+                                label: "Sudah Lunas",
+                                value: "PAID",
+                            },
+                            {
+                                label: "Belum Lunas",
+                                value: "UNPAID",
+                            },
+                        ]}
+                        onChange={(value) =>
+                            handleFilter("amount_due", value.toString())
+                        }
+                        removeValue={() => handleFilter("amount_due", "")}
+                    />
+                </div>
             </div>
 
             {/* Tables */}
@@ -202,10 +225,7 @@ const CashierTransactionIndex = ({
                                 Kasir
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Tgl Masuk
-                            </TableHead>
-                            <TableHead className="bg-stone-200 font-semibold">
-                                Tgl Selesai
+                                Waktu Perbaikan
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
                                 Status
@@ -235,11 +255,9 @@ const CashierTransactionIndex = ({
                                     {transaction.cashier.name}
                                 </TableCell>
                                 <TableCell>
-                                    {ymdToIdDate(transaction.order_at)}
-                                </TableCell>
-                                <TableCell>
-                                    {ymdToIdDate(transaction.completed_at) ??
-                                        "-"}
+                                    {ymdToIdDate(transaction.order_at)} -{" "}
+                                    {ymdToIdDate(transaction.completed_at) ||
+                                        "Selesai"}
                                 </TableCell>
                                 <TableCell>
                                     {buildTrxStatus(transaction.status)}

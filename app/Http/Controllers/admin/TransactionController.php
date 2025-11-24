@@ -16,6 +16,7 @@ class TransactionController extends Controller
         $by_order = $request->input('order', 'DESC');
         $by_start_date_in = $request->input('start_date_in', null);
         $by_end_date_in = $request->input('end_date_in', null);
+        $by_amount_due = $request->input('amount_due', null);
 
         $transactions = Transaction::with('customer', 'cashier')
             ->when($by_search, function ($query, $by_search) {
@@ -35,6 +36,13 @@ class TransactionController extends Controller
                 $query->orderBy('order_at', $by_order);
             }, function ($query) {
                 $query->orderBy('order_at', 'DESC');
+            })
+            ->when($by_amount_due, function ($query, $by_amount_due) {
+                if($by_amount_due == "PAID"){
+                    $query->where('amount_due', '=', 0);
+                } else if($by_amount_due == "UNPAID"){
+                    $query->where('amount_due', '>', 0);
+                }
             })
             ->paginate(config('custom.pagination_size'));
 
