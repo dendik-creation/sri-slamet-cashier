@@ -89,7 +89,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const methodOptions: any = {
         chart: { type: "donut" },
         labels: charts.paymentMethodMonth.labels.map((label) =>
-            humanPaymentMethod(label)
+            humanPaymentMethod(label),
         ),
         legend: { position: "bottom" },
         tooltip: { y: { formatter: (v: number) => floatToIdCurrency(v) } },
@@ -97,7 +97,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const statusOptions: any = {
         chart: { type: "pie" },
         labels: charts.statusDistribution.labels.map((label) =>
-            humanTrxStatus(label)
+            humanTrxStatus(label),
         ),
         legend: { position: "bottom" },
     };
@@ -246,7 +246,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 </TableCell>
                                                 <TableCell>
                                                     {floatToIdCurrency(
-                                                        row.total
+                                                        row.total,
                                                     )}
                                                 </TableCell>
                                             </TableRow>
@@ -315,31 +315,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                     </TableCell>
                                                     <TableCell>
                                                         {humanTrxStatus(
-                                                            t.status
+                                                            t.status,
                                                         )}
                                                     </TableCell>
                                                     <TableCell>
                                                         {floatToIdCurrency(
-                                                            t.total
+                                                            t.total,
                                                         )}
                                                     </TableCell>
                                                     <TableCell>
                                                         {floatToIdCurrency(
-                                                            t.amount_due
+                                                            t.amount_due,
                                                         )}
                                                     </TableCell>
                                                     <TableCell>
                                                         {ymdToIdDate(
-                                                            t.order_at
+                                                            t.order_at,
                                                         )}{" "}
                                                         -{" "}
-                                                        {ymdToIdDate(
-                                                            t.completed_at ||
-                                                                "-"
-                                                        )}
+                                                        {t.completed_at
+                                                            ? ymdToIdDate(
+                                                                  t.completed_at ||
+                                                                      "-",
+                                                              )
+                                                            : "Selesai"}
                                                     </TableCell>
                                                 </TableRow>
-                                            )
+                                            ),
                                         )
                                     ) : (
                                         <EmptyTable colSpan={7} />
@@ -389,7 +391,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 </TableCell>
                                                 <TableCell>
                                                     {floatToIdCurrency(
-                                                        row.total
+                                                        row.total,
                                                     )}
                                                 </TableCell>
                                             </TableRow>
