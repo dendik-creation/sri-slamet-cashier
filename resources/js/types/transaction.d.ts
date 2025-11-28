@@ -14,16 +14,14 @@ export type Transaction = {
     subtotal: number;
     tax_ppn: number;
     total: number;
-    amount_due: number;
-    payment_plan?: "FULL_PAID" | "INSTALMENT";
+    is_paid: boolean;
     completed_at?: string;
-    notes?: string;
 
     // relations
     customer: Customer;
     cashier: User;
     items: TransactionItem[];
-    payments: Payment[];
+    payment?: Payment | null;
 };
 
 export type TransactionItem = {
@@ -36,11 +34,11 @@ export type TransactionItem = {
 };
 
 export type Payment = {
-    id: number;
+    id: number | undefined;
     transaction_id: number;
     recorded_by: number;
-    amount: number;
-    method: "CASH" | "TRANSFER";
+    amount: number | undefined;
+    method: string;
     paid_at: string;
     recorder: User;
 };
@@ -54,7 +52,8 @@ export type CashierTrxIndexProps = PageTitleProps & {
     transactions: PaginationData<Transaction>;
     by_search?: string;
     by_status?: string | "IN_PROGRESS" | "COMPLETED" | "CLOSED";
-    by_order?: "ASC" | "DESC";
+    by_is_paid?: string | "true" | "false";
+    cashiers?: SelectOption[];
 };
 
 export type CashierTrxShowProps = PageTitleProps & {
@@ -77,8 +76,6 @@ export type FinancialReportData = {
         payment_method_counts: Record<string, number>;
         status_distribution: Record<string, number>;
         status_amount_distribution: Record<string, number>;
-        payment_plan_distribution: Record<string, number>;
-        payment_plan_amount_distribution: Record<string, number>;
     };
     charts: {
         daily_revenue: { labels: string[]; series: number[] };
@@ -98,8 +95,7 @@ export type FinancialReportData = {
             invoice_code: string;
             status: string;
             total: number;
-            amount_due: number;
-            payment_plan: string | null;
+            is_paid: boolean;
             order_at: string;
             completed_at: string | null;
         }>;
@@ -107,16 +103,18 @@ export type FinancialReportData = {
 };
 
 export type FinancialReportFilters = {
-    start_date: string;
-    end_date: string;
+    search: string | null;
     status: string | null;
-    payment_method: string | null;
-    payment_plan: string | null;
+    start_date_in: string; // order_at range start
+    end_date_in: string; // order_at range end
+    is_paid: string | null; // "true" | "false" | null (raw request value)
+    cashier: string | null; // cashier_id as string
 };
 
 export type AdminFinancialReportIndexProps = PageTitleProps & {
     filters: FinancialReportFilters;
     report: FinancialReportData;
+    cashiers: SelectOption[];
 };
 
 export type AdminFinancialReportPrintProps = PageTitleProps & {

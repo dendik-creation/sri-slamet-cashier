@@ -2,8 +2,6 @@ import React, { useEffect } from "react";
 import {
     floatToIdCurrency,
     humanTrxStatus,
-    humanPaymentPlan,
-    humanPaymentMethod,
     ymdToIdDate,
 } from "@/components/helper/helper";
 import DynamicCard from "@/components/custom/DynamicCard";
@@ -79,8 +77,8 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                 <h1 className="text-2xl font-bold mb-1">{title}</h1>
                 {description && <p className="text-gray-600">{description}</p>}
                 <p className="text-gray-500">
-                    Periode: {ymdToIdDate(filters.start_date)} -{" "}
-                    {ymdToIdDate(filters.end_date)}
+                    Periode: {ymdToIdDate(filters.start_date_in)} -{" "}
+                    {ymdToIdDate(filters.end_date_in)}
                 </p>
             </header>
 
@@ -185,7 +183,7 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                         <th className="p-1">Invoice</th>
                         <th className="p-1">Status</th>
                         <th className="p-1">Waktu Perbaikan</th>
-                        <th className="p-1">Metode Pelunasan</th>
+                        <th className="p-1">Status Tagihan</th>
                         <th className="p-1">Total</th>
                         <th className="p-1">Sisa</th>
                     </tr>
@@ -207,13 +205,13 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                                     {ymdToIdDate(t.completed_at || "")}
                                 </td>
                                 <td className="p-1">
-                                    {humanPaymentPlan(t.payment_plan || "")}
+                                    {t.is_paid ? "Lunas" : "Belum Lunas"}
                                 </td>
                                 <td className="p-1 text-right">
                                     {floatToIdCurrency(t.total)}
                                 </td>
                                 <td className="p-1 text-right">
-                                    {floatToIdCurrency(t.amount_due)}
+                                    {floatToIdCurrency(t.is_paid ? 0 : t.total)}
                                 </td>
                             </tr>
                         ))

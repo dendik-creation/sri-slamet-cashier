@@ -1,7 +1,7 @@
 import EmptyTable from "@/components/custom/EmptyTable";
 import {
     floatToIdCurrency,
-    humanPaymentPlan,
+    humanPaymentMethod,
     humanTrxItemStatus,
     humanTrxStatus,
     ymdToIdDate,
@@ -120,20 +120,14 @@ const CashierTransactionShow = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 text-sm gap-2 mb-4">
                             <div className="flex flex-col items-start">
                                 <span className="font-semibold text-slate-600">
-                                    Metode Pembayaran
+                                    Status Tagihan
                                 </span>
                                 <span>
-                                    {humanPaymentPlan(
-                                        transaction?.payment_plan
-                                    ) ?? "-"}
-                                </span>
-                            </div>
-                            <div className="flex flex-col items-start">
-                                <span className="font-semibold text-slate-600">
-                                    Sisa Tagihan
-                                </span>
-                                <span>
-                                    {floatToIdCurrency(transaction.amount_due)}
+                                    {transaction.is_paid ? (
+                                        <Badge variant="green">Lunas</Badge>
+                                    ) : (
+                                        <Badge variant="red">Belum Lunas</Badge>
+                                    )}
                                 </span>
                             </div>
                         </div>
@@ -159,33 +153,33 @@ const CashierTransactionShow = ({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {transaction.payments.length ? (
-                                        transaction.payments.map(
-                                            (item, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell>
-                                                        {index + 1}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.method}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {floatToIdCurrency(
-                                                            item.amount
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {ymdToIdDate(
-                                                            item.paid_at,
-                                                            true
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.recorder.name}
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        )
+                                    {transaction.payment ? (
+                                        <TableRow>
+                                            <TableCell>1</TableCell>
+                                            <TableCell>
+                                                {humanPaymentMethod(
+                                                    transaction.payment.method
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {floatToIdCurrency(
+                                                    transaction.payment
+                                                        .amount as number
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {ymdToIdDate(
+                                                    transaction.payment.paid_at,
+                                                    true
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {
+                                                    transaction.payment.recorder
+                                                        .name
+                                                }
+                                            </TableCell>
+                                        </TableRow>
                                     ) : (
                                         <EmptyTable
                                             message="Data pembayaran tidak ada"
@@ -266,34 +260,41 @@ const CashierTransactionShow = ({
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {transaction.items.map(
-                                            (item, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell>
-                                                        {index + 1}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.description}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {floatToIdCurrency(
-                                                            item.line_total
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {buildTrxItemStatus(
-                                                            item.status
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.status ===
-                                                        "REFUNDED"
-                                                            ? item.refund_reason ||
-                                                              "-"
-                                                            : "-"}
-                                                    </TableCell>
-                                                </TableRow>
+                                        {transaction.items.length > 0 ? (
+                                            transaction.items.map(
+                                                (item, index) => (
+                                                    <TableRow key={index}>
+                                                        <TableCell>
+                                                            {index + 1}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {item.description}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {floatToIdCurrency(
+                                                                item.line_total
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {buildTrxItemStatus(
+                                                                item.status
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {item.status ===
+                                                            "REFUNDED"
+                                                                ? item.refund_reason ||
+                                                                  "-"
+                                                                : "-"}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
                                             )
+                                        ) : (
+                                            <EmptyTable
+                                                colSpan={5}
+                                                message="Data perbaikan tidak ada"
+                                            />
                                         )}
                                         <TableRow>
                                             <TableCell

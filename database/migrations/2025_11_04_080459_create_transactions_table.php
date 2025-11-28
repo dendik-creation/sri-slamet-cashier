@@ -20,10 +20,8 @@ return new class extends Migration {
             $table->integer('subtotal')->default(0);
             $table->integer('tax_ppn')->default(0);
             $table->integer('total')->default(0);
-            $table->integer('amount_due')->default(0);
-            $table->enum('payment_plan', ['FULL_PAID', 'INSTALMENT'])->nullable();
+            $table->boolean('is_paid')->default(false);
             $table->timestamp('completed_at')->nullable();
-            $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

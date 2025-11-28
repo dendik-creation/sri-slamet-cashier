@@ -35,17 +35,15 @@ const CashierTransactionIndex = ({
     transactions,
     by_search,
     by_status,
-    by_order,
 }: CashierTrxIndexProps) => {
     const { flash } = useInertiaShared();
     const firstRender = useRef(true);
     const { data: filterData, setData: setFilterData } = useForm({
         search: by_search || "",
         status: by_status || "",
-        order: by_order || "",
         start_date_in: "",
         end_date_in: "",
-        amount_due: "",
+        is_paid: "",
     });
 
     const handleFilter = (key: keyof typeof filterData, value: string) => {
@@ -58,10 +56,9 @@ const CashierTransactionIndex = ({
             {
                 search: data.search,
                 status: data.status,
-                order: data.order,
                 start_date_in: data.start_date_in,
                 end_date_in: data.end_date_in,
-                amount_due: data.amount_due,
+                is_paid: data.is_paid,
             },
             {
                 preserveState: true,
@@ -139,27 +136,6 @@ const CashierTransactionIndex = ({
                     />
                 </div>
                 <div className="">
-                    <SelectSearchInput
-                        className="w-full"
-                        placeholder="Pilih Urutan"
-                        value={filterData.order || ""}
-                        options={[
-                            {
-                                label: "Data Terbaru",
-                                value: "DESC",
-                            },
-                            {
-                                label: "Data Terlama",
-                                value: "ASC",
-                            },
-                        ]}
-                        onChange={(value) =>
-                            handleFilter("order", value.toString())
-                        }
-                        removeValue={() => handleFilter("order", "")}
-                    />
-                </div>
-                <div className="">
                     <DatePickerInput
                         className="w-fit"
                         mode="range"
@@ -188,21 +164,21 @@ const CashierTransactionIndex = ({
                     <SelectSearchInput
                         className="w-full"
                         placeholder="Pilih Status Tagihan"
-                        value={filterData.amount_due || ""}
+                        value={filterData.is_paid || ""}
                         options={[
                             {
                                 label: "Sudah Lunas",
-                                value: "PAID",
+                                value: "true",
                             },
                             {
                                 label: "Belum Lunas",
-                                value: "UNPAID",
+                                value: "false",
                             },
                         ]}
                         onChange={(value) =>
-                            handleFilter("amount_due", value.toString())
+                            handleFilter("is_paid", value.toString())
                         }
-                        removeValue={() => handleFilter("amount_due", "")}
+                        removeValue={() => handleFilter("is_paid", "")}
                     />
                 </div>
             </div>
@@ -228,13 +204,13 @@ const CashierTransactionIndex = ({
                                 Waktu Perbaikan
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Status
+                                Status Transaksi
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
                                 Total Tagihan
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Sisa Tagihan
+                                Status Tagihan
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
                                 Aksi
@@ -257,7 +233,7 @@ const CashierTransactionIndex = ({
                                 <TableCell>
                                     {ymdToIdDate(transaction.order_at)} -{" "}
                                     {ymdToIdDate(transaction.completed_at) ||
-                                        "Selesai"}
+                                        "(belum selesai)"}
                                 </TableCell>
                                 <TableCell>
                                     {buildTrxStatus(transaction.status)}
@@ -266,11 +242,11 @@ const CashierTransactionIndex = ({
                                     {floatToIdCurrency(transaction.total)}
                                 </TableCell>
                                 <TableCell>
-                                    {transaction.amount_due > 0
-                                        ? floatToIdCurrency(
-                                              transaction.amount_due
-                                          )
-                                        : "Lunas"}
+                                    {transaction.is_paid ? (
+                                        <Badge variant="green">Lunas</Badge>
+                                    ) : (
+                                        <Badge variant="red">Belum Lunas</Badge>
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">

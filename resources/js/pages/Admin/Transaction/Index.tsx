@@ -23,11 +23,11 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import React, { useEffect, useRef } from "react";
-import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Printer, Trash2 } from "lucide-react";
 import EmptyTable from "@/components/custom/EmptyTable";
 import { Badge } from "@/components/ui/badge";
+import { SelectOption } from "@/types/global";
 
 const AdminTransactionIndex = ({
     title,
@@ -35,16 +35,16 @@ const AdminTransactionIndex = ({
     transactions,
     by_search,
     by_status,
-    by_order,
+    cashiers,
 }: CashierTrxIndexProps) => {
     const firstRender = useRef(true);
     const { data: filterData, setData: setFilterData } = useForm({
         search: by_search || "",
         status: by_status || "",
-        order: by_order || "",
         start_date_in: "",
         end_date_in: "",
-        amount_due: "",
+        is_paid: "",
+        cashier: "",
     });
 
     const handleFilter = (key: keyof typeof filterData, value: string) => {
@@ -57,10 +57,10 @@ const AdminTransactionIndex = ({
             {
                 search: data.search,
                 status: data.status,
-                order: data.order,
                 start_date_in: data.start_date_in,
                 end_date_in: data.end_date_in,
-                amount_due: data.amount_due,
+                is_paid: data.is_paid,
+                cashier: data.cashier,
             },
             {
                 preserveState: true,
@@ -97,14 +97,14 @@ const AdminTransactionIndex = ({
             <PageTitle title={title} description={description} />
 
             {/* Filters */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4 ">
                 <SearchInput
                     placeholder={`Cari kode invoice atau nama pelanggan`}
-                    className="lg:max-w-sm w-full"
+                    className="w-full"
                     onChange={(e) => handleFilter("search", e.target.value)}
                     value={filterData.search || ""}
                 />
-                <div className="">
+                <div className="w-full">
                     <SelectSearchInput
                         className="w-full"
                         placeholder="Pilih Status"
@@ -129,30 +129,9 @@ const AdminTransactionIndex = ({
                         removeValue={() => handleFilter("status", "")}
                     />
                 </div>
-                <div className="">
-                    <SelectSearchInput
-                        className="w-full"
-                        placeholder="Pilih Urutan"
-                        value={filterData.order || ""}
-                        options={[
-                            {
-                                label: "Data Terbaru",
-                                value: "DESC",
-                            },
-                            {
-                                label: "Data Terlama",
-                                value: "ASC",
-                            },
-                        ]}
-                        onChange={(value) =>
-                            handleFilter("order", value.toString())
-                        }
-                        removeValue={() => handleFilter("order", "")}
-                    />
-                </div>
-                <div className="">
+                <div className="w-full">
                     <DatePickerInput
-                        className="w-fit"
+                        className="w-full"
                         mode="range"
                         placeholder="Pilih rentang tanggal transaksi masuk"
                         value={
@@ -179,22 +158,54 @@ const AdminTransactionIndex = ({
                     <SelectSearchInput
                         className="w-full"
                         placeholder="Pilih Status Tagihan"
-                        value={filterData.amount_due || ""}
+                        value={filterData.is_paid || ""}
                         options={[
                             {
                                 label: "Sudah Lunas",
-                                value: "PAID",
+                                value: "true",
                             },
                             {
                                 label: "Belum Lunas",
-                                value: "UNPAID",
+                                value: "false",
                             },
                         ]}
                         onChange={(value) =>
-                            handleFilter("amount_due", value.toString())
+                            handleFilter("is_paid", value.toString())
                         }
-                        removeValue={() => handleFilter("amount_due", "")}
+                        removeValue={() => handleFilter("is_paid", "")}
                     />
+                </div>
+                <div className="">
+                    <SelectSearchInput
+                        className="w-full"
+                        placeholder="Pilih Kasir"
+                        value={filterData.cashier || ""}
+                        options={cashiers as SelectOption[]}
+                        onChange={(value) =>
+                            handleFilter("cashier", value.toString())
+                        }
+                        removeValue={() => handleFilter("cashier", "")}
+                    />
+                </div>
+                <div className="w-full">
+                    <Link
+                        href={
+                            `/admin/transactions/print?` +
+                            new URLSearchParams({
+                                search: filterData.search || "",
+                                status: filterData.status || "",
+                                start_date_in: filterData.start_date_in || "",
+                                end_date_in: filterData.end_date_in || "",
+                                is_paid: filterData.is_paid || "",
+                                cashier: filterData.cashier || "",
+                            }).toString()
+                        }
+                    >
+                        <Button variant={"yellow"} className="w-full">
+                            <Printer />
+                            Cetak Laporan
+                        </Button>
+                    </Link>
                 </div>
             </div>
 
@@ -257,11 +268,11 @@ const AdminTransactionIndex = ({
                                     {floatToIdCurrency(transaction.total)}
                                 </TableCell>
                                 <TableCell>
-                                    {transaction.amount_due > 0
-                                        ? floatToIdCurrency(
-                                              transaction.amount_due
-                                          )
-                                        : "Lunas"}
+                                    {transaction.is_paid ? (
+                                        <Badge variant="green">Lunas</Badge>
+                                    ) : (
+                                        <Badge variant="red">Belum Lunas</Badge>
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">

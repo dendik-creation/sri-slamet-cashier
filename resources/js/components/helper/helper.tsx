@@ -25,6 +25,13 @@ export const ymdToIdDate = (
     return format(parsedDate, formatString, { locale: id });
 };
 
+export const getNowYmd = (withTime: boolean = false) => {
+    const now = new Date();
+    return withTime
+        ? format(now, "yyyy-MM-dd HH:mm")
+        : format(now, "yyyy-MM-dd");
+};
+
 export const floatToIdCurrency = (
     value: number | string,
     withSymbol: boolean = true,
@@ -63,7 +70,7 @@ export const humanRole = (role: string) => {
         case "CASHIER":
             return "Kasir";
         default:
-            return "Unknown";
+            return "-";
     }
 };
 
@@ -76,7 +83,7 @@ export const humanTrxStatus = (status: string) => {
         case "CLOSED":
             return "Ditutup";
         default:
-            return "Unknown";
+            return "-";
     }
 };
 
@@ -89,18 +96,7 @@ export const humanTrxItemStatus = (status: string) => {
         case "COMPLETED":
             return "Selesai";
         default:
-            return "Unknown";
-    }
-};
-
-export const humanPaymentPlan = (method?: string) => {
-    switch (method) {
-        case "FULL_PAID":
-            return "Langsung Lunas";
-        case "INSTALLMENT":
-            return "Cicilan";
-        default:
-            return "Unknown";
+            return "-";
     }
 };
 
@@ -111,7 +107,7 @@ export const humanPaymentMethod = (method: string) => {
         case "TRANSFER":
             return "Transfer";
         default:
-            return "Unknown";
+            return "-";
     }
 };
 

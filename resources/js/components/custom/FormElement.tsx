@@ -99,6 +99,7 @@ export function SelectSearchInput({
     removeValue,
     className,
     tabIndex = 0,
+    disabled = false,
 }: {
     value: string;
     options: SelectOption[];
@@ -107,9 +108,11 @@ export function SelectSearchInput({
     removeValue?: () => void;
     className?: string;
     tabIndex?: number;
+    disabled?: boolean;
 }) {
     const [open, setOpen] = useState(false);
     const triggerRef = React.useRef<HTMLDivElement>(null);
+
     React.useEffect(() => {
         if (!open) return;
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -128,18 +131,24 @@ export function SelectSearchInput({
                     ref={triggerRef}
                     role="combobox"
                     aria-expanded={open}
-                    tabIndex={tabIndex}
+                    tabIndex={disabled ? -1 : tabIndex}
+                    aria-disabled={disabled}
                     className={cn(
                         "min-w-full py-1.5 justify-between relative border border-input rounded-md px-4 flex items-center cursor-pointer outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                        disabled &&
+                            "bg-gray-100 text-gray-400 cursor-not-allowed opacity-60",
                         className
                     )}
                     onKeyDown={(e) => {
+                        if (disabled) return;
                         if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             setOpen(!open);
                         }
                     }}
-                    onClick={() => setOpen((prev) => !prev)}
+                    onClick={() => {
+                        if (!disabled) setOpen((prev) => !prev);
+                    }}
                 >
                     {value ? (
                         <span className="font-normal">
@@ -149,11 +158,14 @@ export function SelectSearchInput({
                             }
                         </span>
                     ) : (
-                        <span className="font-normal text-slate-500">
+                        <span className="font-normal text-black">
                             {placeholder}
                         </span>
                     )}
-                    {value != "" && value != undefined && removeValue ? (
+                    {value != "" &&
+                    value != undefined &&
+                    removeValue &&
+                    !disabled ? (
                         <span
                             className="ml-2 h-4 w-4 shrink-0 opacity-50 cursor-pointer"
                             onClick={(e) => {
@@ -168,42 +180,44 @@ export function SelectSearchInput({
                     )}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="min-w-[400px] p-0" align="start">
-                <Command>
-                    <CommandInput placeholder="Cari pilihan..." />
-                    <CommandList>
-                        <CommandEmpty>Pilihan tidak ada</CommandEmpty>
-                        <CommandGroup>
-                            {options &&
-                                options.map((option) => (
-                                    <CommandItem
-                                        key={option.value}
-                                        value={option.value}
-                                        onSelect={() => {
-                                            onChange(option.value);
-                                            setOpen(false);
-                                            setTimeout(() => {
-                                                triggerRef.current?.focus();
-                                            }, 0);
-                                        }}
-                                    >
-                                        <Check
-                                            className={cn(
-                                                "mr-2 h-4 w-4",
-                                                value === option.value
-                                                    ? "opacity-100"
-                                                    : "opacity-0"
-                                            )}
-                                        />
-                                        <span className="w-full">
-                                            {option.label}
-                                        </span>
-                                    </CommandItem>
-                                ))}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
+            {!disabled && (
+                <PopoverContent className="min-w-[400px] p-0" align="start">
+                    <Command>
+                        <CommandInput placeholder="Cari pilihan..." />
+                        <CommandList>
+                            <CommandEmpty>Pilihan tidak ada</CommandEmpty>
+                            <CommandGroup>
+                                {options &&
+                                    options.map((option) => (
+                                        <CommandItem
+                                            key={option.value}
+                                            value={option.value}
+                                            onSelect={() => {
+                                                onChange(option.value);
+                                                setOpen(false);
+                                                setTimeout(() => {
+                                                    triggerRef.current?.focus();
+                                                }, 0);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    value === option.value
+                                                        ? "opacity-100"
+                                                        : "opacity-0"
+                                                )}
+                                            />
+                                            <span className="w-full">
+                                                {option.label}
+                                            </span>
+                                        </CommandItem>
+                                    ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            )}
         </Popover>
     );
 }

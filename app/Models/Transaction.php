@@ -14,8 +14,6 @@ class Transaction extends Model
     const STATUS_IN_PROGRESS = 'IN_PROGRESS';
     const STATUS_COMPLETED = 'COMPLETED';
     const STATUS_CLOSED = 'CLOSED';
-    const PAYMENT_PLAN_FULL_PAID = 'FULL_PAID';
-    const PAYMENT_PLAN_INSTALMENT = 'INSTALMENT';
 
     protected $casts = [
         'cashier_id' => 'integer',
@@ -23,7 +21,7 @@ class Transaction extends Model
         'subtotal' => 'integer',
         'tax_ppn' => 'integer',
         'total' => 'integer',
-        'amount_due' => 'integer',
+        'is_paid' => 'boolean',
     ];
 
     public function cashier()
@@ -41,8 +39,8 @@ class Transaction extends Model
         return $this->hasMany(TransactionItem::class, 'transaction_id');
     }
 
-    public function payments()
+    public function payment()
     {
-        return $this->hasMany(Payment::class, 'transaction_id');
+        return $this->hasOne(Payment::class, 'transaction_id');
     }
 }

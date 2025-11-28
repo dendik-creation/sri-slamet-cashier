@@ -14,67 +14,72 @@ use Illuminate\Support\Facades\DB;
 class ReportController extends Controller
 {
     public function adminReportView(Request $request){
-        // Accept filters from request (GET or POST); default to current month when absent
+        // Default date range = current month
         $defaultStart = Carbon::now()->startOfMonth()->format('Y-m-d');
         $defaultEnd = Carbon::now()->endOfMonth()->format('Y-m-d');
 
-        $input = [
-            'start_date' => $request->input('start_date', $defaultStart),
-            'end_date' => $request->input('end_date', $defaultEnd),
+        // Align filters with TransactionController (index): search, status, start_date_in, end_date_in, is_paid, cashier
+        $raw = [
+            'search' => $request->input('search'),
             'status' => $request->input('status'),
-            'payment_method' => $request->input('payment_method'),
-            'payment_plan' => $request->input('payment_plan'),
+            'start_date_in' => $request->input('start_date_in', $defaultStart),
+            'end_date_in' => $request->input('end_date_in', $defaultEnd),
+            'is_paid' => $request->input('is_paid'), // 'true' | 'false' | null
+            'cashier' => $request->input('cashier'),
         ];
 
-        // Basic validation (only if user submitted custom dates)
         $rules = [
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'nullable|string',
-            'payment_method' => 'nullable|string',
-            'payment_plan' => 'nullable|string',
+            'search' => 'nullable|string',
+            'status' => 'nullable|string|in:IN_PROGRESS,COMPLETED,CLOSED',
+            'start_date_in' => 'required|date',
+            'end_date_in' => 'required|date|after_or_equal:start_date_in',
+            'is_paid' => 'nullable|in:true,false',
+            'cashier' => 'nullable|integer|exists:users,id',
         ];
-        // Validate only when request carries any filter change (except defaults)
-        $validated = validator($input, $rules)->validate();
+        $validated = validator($raw, $rules)->validate();
 
         $filters = [
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
+            'search' => $validated['search'] ?? null,
             'status' => $validated['status'] ?? null,
-            'payment_method' => $validated['payment_method'] ?? null,
-            'payment_plan' => $validated['payment_plan'] ?? null,
+            'start_date_in' => $validated['start_date_in'],
+            'end_date_in' => $validated['end_date_in'],
+            'is_paid' => $validated['is_paid'] ?? null,
+            'cashier' => $validated['cashier'] ?? null,
         ];
 
-        // Use full detailed dataset (dashboard-like plus extended breakdowns)
         $data = $this->buildReportData($filters);
+
+        // Cashiers list for filter (role cashier only)
+        $cashiers = \App\Models\User::where('role', \App\Models\User::ROLE_CASHIER)->get()->map(fn($u) => [ 'value' => $u->id, 'label' => $u->name ]);
 
         return Inertia::render('Admin/FinancialReport/Index', [
             'title' => 'Laporan Keuangan',
             'description' => 'Ringkasan keuangan periode terpilih',
             'filters' => $filters,
             'report' => $data,
+            'cashiers' => $cashiers,
         ]);
     }
 
     public function adminReportGenerate(Request $request){
-        // Print view uses same filter schema (query string or GET request)
         $validated = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'nullable|string',
-            'payment_method' => 'nullable|string',
-            'payment_plan' => 'nullable|string',
+            'search' => 'nullable|string',
+            'status' => 'nullable|string|in:IN_PROGRESS,COMPLETED,CLOSED',
+            'start_date_in' => 'required|date',
+            'end_date_in' => 'required|date|after_or_equal:start_date_in',
+            'is_paid' => 'nullable|in:true,false',
+            'cashier' => 'nullable|integer|exists:users,id',
         ]);
 
         $filters = [
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
+            'search' => $validated['search'] ?? null,
             'status' => $validated['status'] ?? null,
-            'payment_method' => $validated['payment_method'] ?? null,
-            'payment_plan' => $validated['payment_plan'] ?? null,
+            'start_date_in' => $validated['start_date_in'],
+            'end_date_in' => $validated['end_date_in'],
+            'is_paid' => $validated['is_paid'] ?? null,
+            'cashier' => $validated['cashier'] ?? null,
         ];
 
-        // Use print-specific dataset (full transactions for period)
         $data = $this->buildPrintReportData($filters);
 
         return Inertia::render('Admin/FinancialReport/Print', [
@@ -86,35 +91,36 @@ class ReportController extends Controller
     }
 
     protected function buildReportData(array $filters){
-        $start = Carbon::parse($filters['start_date'])->startOfDay();
-        $end = Carbon::parse($filters['end_date'])->endOfDay();
+        $start = Carbon::parse($filters['start_date_in'])->startOfDay();
+        $end = Carbon::parse($filters['end_date_in'])->endOfDay();
 
         // Base queries with filters
-        $trxQuery = Transaction::query()
+        $trxQuery = Transaction::with('customer','cashier')
             ->whereBetween('order_at', [$start, $end]);
         $payQuery = Payment::query()
             ->whereBetween('paid_at', [$start, $end]);
         $itemQuery = TransactionItem::query()
             ->whereHas('transaction', fn($q) => $q->whereBetween('order_at', [$start, $end]));
 
-        if ($filters['status']) {
-            $trxQuery->where('status', $filters['status']);
-        }
-        if ($filters['payment_plan']) {
-            $trxQuery->where('payment_plan', $filters['payment_plan']);
-        }
-        if ($filters['payment_method']) {
-            $payQuery->where('method', $filters['payment_method']);
+        if ($filters['status']) { $trxQuery->where('status', $filters['status']); }
+        if ($filters['is_paid']) { $trxQuery->where('is_paid', filter_var($filters['is_paid'], FILTER_VALIDATE_BOOLEAN)); }
+        if ($filters['cashier']) { $trxQuery->where('cashier_id', $filters['cashier']); }
+        if ($filters['search']) {
+            $search = $filters['search'];
+            $trxQuery->where(function($q) use ($search){
+                $q->where('invoice_code','like','%'.$search.'%')
+                   ->orWhereHas('customer', fn($qc) => $qc->where('name','like','%'.$search.'%'));
+            });
         }
 
-        $transactions = $trxQuery->get(['id','invoice_code','customer_id','cashier_id','status','subtotal','tax_ppn','total','amount_due','payment_plan','order_at','completed_at']);
+        $transactions = $trxQuery->get(['id','invoice_code','customer_id','cashier_id','status','subtotal','tax_ppn','total','is_paid','order_at','completed_at']);
         $payments = $payQuery->get(['id','transaction_id','recorded_by','amount','method','paid_at']);
         $refundedItems = $itemQuery->where('status', TransactionItem::STATUS_REFUNDED)->get(['id','transaction_id','line_total']);
 
         $totalRevenue = (int) $payments->sum('amount');
         $totalTransactions = $transactions->count();
         $averageTransactionValue = $totalTransactions ? (int) floor($transactions->avg('total')) : 0;
-        $totalOutstanding = (int) $transactions->sum('amount_due');
+        $totalOutstanding = (int) $transactions->where('is_paid', false)->sum('total');
         $totalRefundedAmount = (int) $refundedItems->sum('line_total');
         $refundedItemsCount = $refundedItems->count();
 
@@ -124,9 +130,6 @@ class ReportController extends Controller
         // Status distribution (counts) + status amounts (sum total)
         $statusDistribution = $transactions->groupBy('status')->map(fn($c) => $c->count());
         $statusAmountDistribution = $transactions->groupBy('status')->map(fn($c) => (int) $c->sum('total'));
-        // Payment plan breakdown (counts + amounts)
-        $paymentPlanDistribution = $transactions->groupBy('payment_plan')->map(fn($c) => $c->count());
-        $paymentPlanAmountDistribution = $transactions->groupBy('payment_plan')->map(fn($c) => (int) $c->sum('total'));
 
         // Daily revenue series
         // Expand the date range by 1 day on each side to handle same start/end dates
@@ -190,8 +193,6 @@ class ReportController extends Controller
                 'payment_method_counts' => $paymentMethodCounts,
                 'status_distribution' => $statusDistribution,
                 'status_amount_distribution' => $statusAmountDistribution,
-                'payment_plan_distribution' => $paymentPlanDistribution,
-                'payment_plan_amount_distribution' => $paymentPlanAmountDistribution,
             ],
             'charts' => [
                 'daily_revenue' => [
@@ -212,8 +213,9 @@ class ReportController extends Controller
                     'invoice_code' => $t->invoice_code,
                     'status' => $t->status,
                     'total' => (int) $t->total,
-                    'amount_due' => (int) $t->amount_due,
-                    'payment_plan' => $t->payment_plan,
+                    'is_paid' => (bool) $t->is_paid,
+                    'cashier' => [ 'id' => $t->cashier?->id, 'name' => $t->cashier?->name ],
+                    'customer' => [ 'id' => $t->customer?->id, 'name' => $t->customer?->name ],
                     'order_at' => $t->order_at,
                     'completed_at' => $t->completed_at,
                 ]),
@@ -223,25 +225,32 @@ class ReportController extends Controller
 
     // Full dataset for print (all transactions in period, maintain other aggregations)
     protected function buildPrintReportData(array $filters){
-        $start = Carbon::parse($filters['start_date'])->startOfDay();
-        $end = Carbon::parse($filters['end_date'])->endOfDay();
+        $start = Carbon::parse($filters['start_date_in'])->startOfDay();
+        $end = Carbon::parse($filters['end_date_in'])->endOfDay();
 
-        $trxQuery = Transaction::query()->whereBetween('order_at', [$start, $end]);
+        $trxQuery = Transaction::with('customer','cashier')->whereBetween('order_at', [$start, $end]);
         $payQuery = Payment::query()->whereBetween('paid_at', [$start, $end]);
         $itemQuery = TransactionItem::query()->whereHas('transaction', fn($q) => $q->whereBetween('order_at', [$start, $end]));
 
         if ($filters['status']) { $trxQuery->where('status', $filters['status']); }
-        if ($filters['payment_plan']) { $trxQuery->where('payment_plan', $filters['payment_plan']); }
-        if ($filters['payment_method']) { $payQuery->where('method', $filters['payment_method']); }
+        if ($filters['is_paid']) { $trxQuery->where('is_paid', filter_var($filters['is_paid'], FILTER_VALIDATE_BOOLEAN)); }
+        if ($filters['cashier']) { $trxQuery->where('cashier_id', $filters['cashier']); }
+        if ($filters['search']) {
+            $search = $filters['search'];
+            $trxQuery->where(function($q) use ($search){
+                $q->where('invoice_code','like','%'.$search.'%')
+                   ->orWhereHas('customer', fn($qc) => $qc->where('name','like','%'.$search.'%'));
+            });
+        }
 
-        $transactions = $trxQuery->get(['id','invoice_code','status','total','amount_due','payment_plan','order_at','completed_at']);
+        $transactions = $trxQuery->get(['id','invoice_code','cashier_id','customer_id','status','total','is_paid','order_at','completed_at']);
         $payments = $payQuery->get(['amount','method','paid_at']);
         $refundedItems = $itemQuery->where('status', TransactionItem::STATUS_REFUNDED)->get(['line_total']);
 
         $totalRevenue = (int) $payments->sum('amount');
         $totalTransactions = $transactions->count();
         $averageTransactionValue = $totalTransactions ? (int) floor($transactions->avg('total')) : 0;
-        $totalOutstanding = (int) $transactions->sum('amount_due');
+        $totalOutstanding = (int) $transactions->where('is_paid', false)->sum('total');
         $totalRefundedAmount = (int) $refundedItems->sum('line_total');
         $refundedItemsCount = $refundedItems->count();
 
@@ -249,8 +258,6 @@ class ReportController extends Controller
         $paymentMethodCounts = $payments->groupBy('method')->map(fn($c) => $c->count());
         $statusDistribution = $transactions->groupBy('status')->map(fn($c) => $c->count());
         $statusAmountDistribution = $transactions->groupBy('status')->map(fn($c) => (int) $c->sum('total'));
-        $paymentPlanDistribution = $transactions->groupBy('payment_plan')->map(fn($c) => $c->count());
-        $paymentPlanAmountDistribution = $transactions->groupBy('payment_plan')->map(fn($c) => (int) $c->sum('total'));
 
         $periodDays = Carbon::parse($start)->diffInDays($end) + 1;
         $daily = collect(range(0, $periodDays - 1))->map(function($i) use ($start, $payments){
@@ -279,8 +286,6 @@ class ReportController extends Controller
                 'payment_method_counts' => $paymentMethodCounts,
                 'status_distribution' => $statusDistribution,
                 'status_amount_distribution' => $statusAmountDistribution,
-                'payment_plan_distribution' => $paymentPlanDistribution,
-                'payment_plan_amount_distribution' => $paymentPlanAmountDistribution,
             ],
             'charts' => [
                 'daily_revenue' => [
@@ -300,8 +305,9 @@ class ReportController extends Controller
                     'invoice_code' => $t->invoice_code,
                     'status' => $t->status,
                     'total' => (int) $t->total,
-                    'amount_due' => (int) $t->amount_due,
-                    'payment_plan' => $t->payment_plan,
+                    'is_paid' => (bool) $t->is_paid,
+                    'cashier' => [ 'id' => $t->cashier?->id, 'name' => $t->cashier?->name ],
+                    'customer' => [ 'id' => $t->customer?->id, 'name' => $t->customer?->name ],
                     'order_at' => $t->order_at,
                     'completed_at' => $t->completed_at,
                 ]),
@@ -319,16 +325,15 @@ class ReportController extends Controller
         $itemQuery = TransactionItem::query()->whereHas('transaction', fn($q) => $q->whereBetween('order_at', [$start, $end]));
 
         if ($filters['status']) { $trxQuery->where('status', $filters['status']); }
-        if ($filters['payment_plan']) { $trxQuery->where('payment_plan', $filters['payment_plan']); }
         if ($filters['payment_method']) { $payQuery->where('method', $filters['payment_method']); }
 
-        $transactions = $trxQuery->get(['id','invoice_code','status','total','amount_due','payment_plan','order_at']);
+        $transactions = $trxQuery->get(['id','invoice_code','status','total','is_paid','order_at']);
         $payments = $payQuery->get(['amount','paid_at']);
         $refundedItems = $itemQuery->where('status', TransactionItem::STATUS_REFUNDED)->get(['line_total']);
 
         $totalRevenue = (int) $payments->sum('amount');
         $totalTransactions = $transactions->count();
-        $totalOutstanding = (int) $transactions->sum('amount_due');
+        $totalOutstanding = (int) $transactions->where('is_paid', false)->sum('total');
         $totalRefundedAmount = (int) $refundedItems->sum('line_total');
         $periodDays = Carbon::parse($start)->diffInDays($end) + 1;
 
@@ -358,8 +363,7 @@ class ReportController extends Controller
                     'invoice_code' => $t->invoice_code,
                     'status' => $t->status,
                     'total' => (int) $t->total,
-                    'amount_due' => (int) $t->amount_due,
-                    'payment_plan' => $t->payment_plan,
+                    'is_paid' => (bool) $t->is_paid,
                     'order_at' => $t->order_at,
                 ]),
             ],

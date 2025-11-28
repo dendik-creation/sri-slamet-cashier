@@ -16,7 +16,6 @@ import ReactApexChart from "react-apexcharts";
 import {
     floatToIdCurrency,
     humanPaymentMethod,
-    humanPaymentPlan,
     humanTrxStatus,
     inputDebounce,
     ymdToIdDate,
@@ -43,12 +42,14 @@ type FullReportIndexProps = {
     title: string;
     description?: string;
     filters: {
-        start_date: string;
-        end_date: string;
+        search: string | null;
         status: string | null;
-        payment_method: string | null;
-        payment_plan: string | null;
+        start_date_in: string;
+        end_date_in: string;
+        is_paid: string | null; // 'true' | 'false' | null
+        cashier: string | null; // cashier id
     };
+    cashiers: Array<{ value: number; label: string }>;
     report: {
         summary: {
             total_revenue: number;
@@ -64,8 +65,6 @@ type FullReportIndexProps = {
             payment_method_counts: Record<string, number>;
             status_distribution: Record<string, number>;
             status_amount_distribution: Record<string, number>;
-            payment_plan_distribution: Record<string, number>;
-            payment_plan_amount_distribution: Record<string, number>;
         };
         charts: {
             daily_revenue: { labels: string[]; series: number[] };
@@ -85,8 +84,7 @@ type FullReportIndexProps = {
                 invoice_code: string;
                 status: string;
                 total: number;
-                amount_due: number;
-                payment_plan: string | null;
+                is_paid: boolean;
                 order_at: string;
                 completed_at: string | null;
             }>;
@@ -99,35 +97,39 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
     description,
     filters,
     report,
+    cashiers,
 }) => {
     const { data, setData } = useForm({
-        start_date: filters.start_date,
-        end_date: filters.end_date,
+        search: filters.search || "",
         status: filters.status || "",
-        payment_method: filters.payment_method || "",
-        payment_plan: filters.payment_plan || "",
+        start_date_in: filters.start_date_in,
+        end_date_in: filters.end_date_in,
+        is_paid: filters.is_paid || "",
+        cashier: filters.cashier || "",
     });
     const prevQueryRef = useRef<string>("");
     const firstRender = useRef(true);
 
     const buildQuery = () => {
         const params = new URLSearchParams({
-            start_date: data.start_date,
-            end_date: data.end_date,
+            search: data.search,
             status: data.status,
-            payment_method: data.payment_method,
-            payment_plan: data.payment_plan,
+            start_date_in: data.start_date_in,
+            end_date_in: data.end_date_in,
+            is_paid: data.is_paid,
+            cashier: data.cashier,
         });
         return params.toString();
     };
 
     const debounceFetch = inputDebounce((formData: typeof data) => {
         const params = new URLSearchParams({
-            start_date: formData.start_date,
-            end_date: formData.end_date,
+            search: formData.search,
             status: formData.status,
-            payment_method: formData.payment_method,
-            payment_plan: formData.payment_plan,
+            start_date_in: formData.start_date_in,
+            end_date_in: formData.end_date_in,
+            is_paid: formData.is_paid,
+            cashier: formData.cashier,
         }).toString();
         if (params !== prevQueryRef.current) {
             prevQueryRef.current = params;
@@ -223,15 +225,11 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
         legend: { position: "bottom" },
     };
 
-    const planLabels = Object.keys(
-        report.breakdown.payment_plan_distribution || {}
-    );
-    const planSeries = Object.values(
-        report.breakdown.payment_plan_distribution || {}
-    );
+    const planLabels: string[] = [];
+    const planSeries: number[] = [];
     const planOptions: any = {
         chart: { type: "donut" },
-        labels: planLabels.map((plan) => humanPaymentPlan(plan)),
+        labels: [],
         legend: { position: "bottom" },
     };
 
@@ -245,18 +243,28 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                 className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-white rounded-md border"
             >
                 <div className="flex flex-col col-span-1">
+                    <label className="text-sm font-semibold mb-1">Cari</label>
+                    <input
+                        type="text"
+                        className="border rounded-md px-2 py-1 text-sm"
+                        placeholder="Invoice / Nama Pelanggan"
+                        value={data.search}
+                        onChange={(e) => handleChange("search", e.target.value)}
+                    />
+                </div>
+                <div className="flex flex-col col-span-1">
                     <label className="text-sm font-semibold mb-1">
-                        Rentang Tanggal
+                        Rentang Tanggal Masuk
                     </label>
                     <DatePickerInput
                         className="w-full"
                         mode="range"
                         placeholder="Pilih rentang tanggal"
                         value={
-                            data.start_date && data.end_date
+                            data.start_date_in && data.end_date_in
                                 ? {
-                                      from: new Date(data.start_date),
-                                      to: new Date(data.end_date),
+                                      from: new Date(data.start_date_in),
+                                      to: new Date(data.end_date_in),
                                   }
                                 : undefined
                         }
@@ -265,8 +273,8 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                                 const [start, end] = dateRange.split(" - ");
                                 setData((prev) => ({
                                     ...prev,
-                                    start_date: start,
-                                    end_date: end,
+                                    start_date_in: start,
+                                    end_date_in: end,
                                 }));
                             }
                         }}
@@ -291,54 +299,51 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                 </div>
                 <div className="flex flex-col col-span-1">
                     <label className="text-sm font-semibold mb-1">
-                        Metode Pelunasan
+                        Status Tagihan
                     </label>
                     <SelectSearchInput
                         options={[
                             { label: "Semua", value: "" },
-                            { label: "Lunas", value: "FULL_PAID" },
-                            { label: "Cicilan", value: "INSTALMENT" },
+                            { label: "Sudah Lunas", value: "true" },
+                            { label: "Belum Lunas", value: "false" },
                         ]}
-                        value={data.payment_plan}
-                        onChange={(v) =>
-                            handleChange("payment_plan", v as string)
-                        }
-                        placeholder="Metode"
-                        removeValue={() => handleChange("payment_plan", "")}
+                        value={data.is_paid}
+                        onChange={(v) => handleChange("is_paid", v as string)}
+                        placeholder="Pilih status tagihan"
+                        removeValue={() => handleChange("is_paid", "")}
                     />
                 </div>
                 <div className="flex flex-col col-span-1">
-                    <label className="text-sm font-semibold mb-1">
-                        Metode Pembayaran Item
-                    </label>
+                    <label className="text-sm font-semibold mb-1">Kasir</label>
                     <SelectSearchInput
                         options={[
                             { label: "Semua", value: "" },
-                            { label: "Tunai", value: "CASH" },
-                            {
-                                label: "Transfer Bank / E-Wallet",
-                                value: "TRANSFER",
-                            },
+                            ...cashiers.map(
+                                (c: { label: string; value: number }) => ({
+                                    label: c.label,
+                                    value: c.value.toString(),
+                                })
+                            ),
                         ]}
-                        value={data.payment_method}
-                        onChange={(v) =>
-                            handleChange("payment_method", v as string)
-                        }
-                        placeholder="Metode"
-                        removeValue={() => handleChange("payment_method", "")}
+                        value={data.cashier}
+                        onChange={(v) => handleChange("cashier", v as string)}
+                        placeholder="Pilih kasir"
+                        removeValue={() => handleChange("cashier", "")}
                     />
                 </div>
+                {/* Payment method is no longer a filter; charts still show breakdown */}
                 <div className="flex items-end gap-2 col-span-2">
                     <Button
                         type="button"
                         variant="yellow"
                         onClick={() => {
                             const q = new URLSearchParams({
-                                start_date: data.start_date,
-                                end_date: data.end_date,
+                                search: data.search,
                                 status: data.status || "",
-                                payment_method: data.payment_method || "",
-                                payment_plan: data.payment_plan || "",
+                                start_date_in: data.start_date_in,
+                                end_date_in: data.end_date_in,
+                                is_paid: data.is_paid || "",
+                                cashier: data.cashier || "",
                             }).toString();
                             router.visit(`/admin/reports/financial/print?${q}`);
                         }}
@@ -621,7 +626,7 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                                         Status
                                     </TableHead>
                                     <TableHead className="bg-stone-200 font-semibold">
-                                        Metode Pelunasan
+                                        Status Tagihan
                                     </TableHead>
                                     <TableHead className="bg-stone-200 font-semibold">
                                         Total
@@ -646,16 +651,16 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                                                 {humanTrxStatus(t.status)}
                                             </TableCell>
                                             <TableCell>
-                                                {humanPaymentPlan(
-                                                    t.payment_plan ?? ""
-                                                ) || "-"}
+                                                {t.is_paid
+                                                    ? "Lunas"
+                                                    : "Belum Lunas"}
                                             </TableCell>
                                             <TableCell>
                                                 {floatToIdCurrency(t.total)}
                                             </TableCell>
                                             <TableCell>
                                                 {floatToIdCurrency(
-                                                    t.amount_due
+                                                    t.is_paid ? 0 : t.total
                                                 )}
                                             </TableCell>
                                             <TableCell>

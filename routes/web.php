@@ -53,7 +53,9 @@ Route::prefix('admin')
         // Transactions
         Route::prefix('transactions')->group(function () {
             Route::get('/', [AdminTransactionController::class, 'index'])->name('admin.transactions.index');
+            Route::get('/print', [AdminTransactionController::class, 'print'])->name('admin.transactions.print');
             Route::get('/{id}', [AdminTransactionController::class, 'show'])->name('admin.transactions.show');
+            // Admin print uses AdminTransactionController@print with same filters as index
         });
 
         // Financial Report
@@ -92,7 +94,7 @@ Route::prefix('cashier')
             Route::post('/new', [CashierTransactionController::class, 'store'])->name('cashier.transactions.store');
             Route::get('/{id}', [CashierTransactionController::class, 'show'])->name('cashier.transactions.show');
             Route::get('/edit/{id}', [CashierTransactionController::class, 'edit'])->name('cashier.transactions.edit');
-            Route::put('/update/{id}', [CashierTransactionController::class, 'update'])->name('cashier.transaction.update');
+            Route::put('/update/{id}', [CashierTransactionController::class, 'update'])->name('cashier.transactions.update');
         });
     });
 
