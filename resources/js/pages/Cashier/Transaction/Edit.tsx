@@ -5,7 +5,11 @@ import {
     ErrorInput,
     SelectSearchInput,
 } from "@/components/custom/FormElement";
-import { floatToIdCurrency, getNowYmd } from "@/components/helper/helper";
+import {
+    floatToIdCurrency,
+    getNowYmd,
+    roundingToNearestHundred,
+} from "@/components/helper/helper";
 import { Input } from "@/components/ui/input";
 import AppLayout, { useInertiaShared } from "@/partials/AppLayout";
 import { PageTitle } from "@/Partials/PageTitle";
@@ -44,6 +48,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
     const { flash } = useInertiaShared();
 
     const initialCustomer = transaction.customer || null;
+    console.log(transaction);
 
     const { data, setData, put, processing, errors, setError, clearErrors } =
         useForm({
@@ -65,7 +70,8 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                     status: (it.status || "ACTIVE") as
                         | "ACTIVE"
                         | "REFUNDED"
-                        | "REPLACED",
+                        | "REPLACED"
+                        | "COMPLETED",
                     refund_reason: it?.refund_reason || null,
                 })) as TransactionItemEdit[],
                 subtotal: transaction.subtotal || 0,
@@ -94,7 +100,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
             ...data.trx,
             subtotal,
             tax_ppn: app_setting.tax_applied,
-            total,
+            total: roundingToNearestHundred(total),
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data.trx.trx_items]);
@@ -598,6 +604,10 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                                     {
                                                                         label: "Diganti",
                                                                         value: "REPLACED",
+                                                                    },
+                                                                    {
+                                                                        label: "Selesai",
+                                                                        value: "COMPLETED",
                                                                     },
                                                                 ]}
                                                                 value={

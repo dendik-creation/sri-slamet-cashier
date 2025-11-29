@@ -89,108 +89,365 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
         };
     }, [title]);
 
-    return (
-        <div className="p-8 print:p-4 font-sans text-xs md:text-sm text-gray-900">
-            <header className="mb-6">
-                <h1 className="text-2xl font-bold mb-1">{title}</h1>
-                {description && <p className="text-gray-600">{description}</p>}
-                {filters && (
-                    <div className="mt-2 text-gray-500">
-                        {(filters.start_date_in || filters.end_date_in) && (
-                            <p>
-                                Periode:{" "}
-                                {ymdToIdDate(filters.start_date_in || "")} -{" "}
-                                {ymdToIdDate(filters.end_date_in || "")}
-                            </p>
-                        )}
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {filters.search ? (
-                                <span className="px-2 py-1 bg-gray-100 rounded">
-                                    Pencarian: "{filters.search}"
-                                </span>
-                            ) : null}
-                            {filters.status ? (
-                                <span className="px-2 py-1 bg-gray-100 rounded">
-                                    Status:{" "}
-                                    {humanTrxStatus(String(filters.status))}
-                                </span>
-                            ) : null}
-                            {filters.is_paid !== undefined &&
-                            filters.is_paid !== null &&
-                            String(filters.is_paid) !== "" ? (
-                                <span className="px-2 py-1 bg-gray-100 rounded">
-                                    Tagihan:{" "}
-                                    {String(filters.is_paid) === "true" ||
-                                    filters.is_paid === true
-                                        ? "Lunas"
-                                        : "Belum Lunas"}
-                                </span>
-                            ) : null}
-                            {filters.cashier ? (
-                                <span className="px-2 py-1 bg-gray-100 rounded">
-                                    Kasir: {filters.cashier}
-                                </span>
-                            ) : null}
-                        </div>
-                    </div>
-                )}
-            </header>
+    const styles = `
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 12mm;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #print-area, #print-area * {
+                visibility: visible !important;
+            }
+            #print-area {
+                position: absolute !important;
+                left: 0; 
+                top: 0;
+                width: 100vw;
+                height: auto;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
+    `;
 
-            <table className="w-full border text-[11px] mb-8">
-                <thead>
-                    <tr className="bg-gray-100">
-                        <th className="p-1 text-left">#</th>
-                        <th className="p-1 text-left">Invoice</th>
-                        <th className="p-1 text-left">Pelanggan</th>
-                        <th className="p-1 text-left">Kasir</th>
-                        <th className="p-1 text-left">Status</th>
-                        <th className="p-1 text-left">Status Tagihan</th>
-                        <th className="p-1 text-right">Total</th>
-                        <th className="p-1 text-left">Waktu Perbaikan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {transactions.length ? (
-                        transactions.map((t, i) => (
-                            <tr
-                                key={t.id}
-                                className={i % 2 ? "bg-white" : "bg-gray-50"}
+    return (
+        <>
+            <style dangerouslySetInnerHTML={{ __html: styles }} />
+            <div
+                id="print-area"
+                style={{
+                    padding: 24,
+                    fontFamily: "Arial, sans-serif",
+                    color: "#333",
+                    background: "#fff",
+                    fontSize: 14,
+                    lineHeight: 1.5,
+                    maxWidth: 1200,
+                    margin: "0 auto",
+                }}
+            >
+                <header
+                    style={{
+                        marginBottom: 24,
+                        borderBottom: "2px solid #333",
+                        paddingBottom: 16,
+                    }}
+                >
+                    <h1
+                        style={{
+                            fontSize: 24,
+                            fontWeight: "bold",
+                            marginBottom: 8,
+                            color: "#333",
+                        }}
+                    >
+                        {title}
+                    </h1>
+                    {description && (
+                        <p
+                            style={{
+                                color: "#666",
+                                fontSize: 14,
+                                marginBottom: 12,
+                            }}
+                        >
+                            {description}
+                        </p>
+                    )}
+                    {filters && (
+                        <div
+                            style={{
+                                marginTop: 12,
+                                color: "#555",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 8,
+                                    marginTop: 8,
+                                }}
                             >
-                                <td className="p-1">{i + 1}</td>
-                                <td className="p-1">{t.invoice_code}</td>
-                                <td className="p-1">
-                                    {t.customer?.name ?? "-"}
-                                </td>
-                                <td className="p-1">
-                                    {t.cashier?.name ?? "-"}
-                                </td>
-                                <td className="p-1">
-                                    {humanTrxStatus(t.status)}
-                                </td>
-                                <td className="p-1">
-                                    {t.is_paid ? "Lunas" : "Belum Lunas"}
-                                </td>
-                                <td className="p-1 text-right">
-                                    {floatToIdCurrency(t.total)}
-                                </td>
-                                <td className="p-1">
-                                    {ymdToIdDate(t.order_at)}
-                                    {t.completed_at
-                                        ? ` - ${ymdToIdDate(t.completed_at)}`
-                                        : ""}
+                                {(filters.start_date_in ||
+                                    filters.end_date_in) && (
+                                    <span
+                                        style={{
+                                            padding: "6px 12px",
+                                            background: "#f5f5f5",
+                                            border: "1px solid #ddd",
+                                            borderRadius: 4,
+                                            fontSize: 12,
+                                            color: "#333",
+                                        }}
+                                    >
+                                        Periode:{" "}
+                                        {ymdToIdDate(
+                                            filters.start_date_in || ""
+                                        )}{" "}
+                                        -{" "}
+                                        {ymdToIdDate(filters.end_date_in || "")}
+                                    </span>
+                                )}
+                                {filters.search && (
+                                    <span
+                                        style={{
+                                            padding: "6px 12px",
+                                            background: "#f5f5f5",
+                                            border: "1px solid #ddd",
+                                            borderRadius: 4,
+                                            fontSize: 12,
+                                            color: "#333",
+                                        }}
+                                    >
+                                        Pencarian: "{filters.search}"
+                                    </span>
+                                )}
+                                {filters.status && (
+                                    <span
+                                        style={{
+                                            padding: "6px 12px",
+                                            background: "#f5f5f5",
+                                            border: "1px solid #ddd",
+                                            borderRadius: 4,
+                                            fontSize: 12,
+                                            color: "#333",
+                                        }}
+                                    >
+                                        Status Transaksi:{" "}
+                                        {humanTrxStatus(String(filters.status))}
+                                    </span>
+                                )}
+                                {filters.is_paid !== undefined &&
+                                    filters.is_paid !== null &&
+                                    String(filters.is_paid) !== "" && (
+                                        <span
+                                            style={{
+                                                padding: "6px 12px",
+                                                background: "#f5f5f5",
+                                                border: "1px solid #ddd",
+                                                borderRadius: 4,
+                                                fontSize: 12,
+                                                color: "#333",
+                                            }}
+                                        >
+                                            Tagihan:{" "}
+                                            {String(filters.is_paid) ===
+                                                "true" ||
+                                            filters.is_paid === true
+                                                ? "Lunas"
+                                                : "Belum Lunas"}
+                                        </span>
+                                    )}
+                                {filters.cashier && (
+                                    <span
+                                        style={{
+                                            padding: "6px 12px",
+                                            background: "#f5f5f5",
+                                            border: "1px solid #ddd",
+                                            borderRadius: 4,
+                                            fontSize: 12,
+                                            color: "#333",
+                                        }}
+                                    >
+                                        Kasir: {filters.cashier}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </header>
+
+                <table
+                    style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        marginBottom: 24,
+                        fontSize: 13,
+                        background: "#fff",
+                    }}
+                >
+                    <thead>
+                        <tr>
+                            <th
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "4px 6px",
+                                    background: "#f8f8f8",
+                                }}
+                            >
+                                #
+                            </th>
+                            <th
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "4px 6px",
+                                    background: "#f8f8f8",
+                                }}
+                            >
+                                Kode Transaksi
+                            </th>
+                            <th
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "4px 6px",
+                                    background: "#f8f8f8",
+                                }}
+                            >
+                                Pelanggan
+                            </th>
+                            <th
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "4px 6px",
+                                    background: "#f8f8f8",
+                                }}
+                            >
+                                Kasir
+                            </th>
+                            <th
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "4px 6px",
+                                    background: "#f8f8f8",
+                                }}
+                            >
+                                Status Transaksi
+                            </th>
+                            <th
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "4px 6px",
+                                    background: "#f8f8f8",
+                                }}
+                            >
+                                Status Tagihan
+                            </th>
+                            <th
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "4px 6px",
+                                    background: "#f8f8f8",
+                                    textAlign: "right",
+                                }}
+                            >
+                                Total
+                            </th>
+                            <th
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "4px 6px",
+                                    background: "#f8f8f8",
+                                }}
+                            >
+                                Waktu Perbaikan
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {transactions.length ? (
+                            transactions.map((t, i) => (
+                                <tr key={t.id}>
+                                    <td
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: 8,
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        {i + 1}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: 8,
+                                        }}
+                                    >
+                                        {t.invoice_code}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: 8,
+                                        }}
+                                    >
+                                        {t.customer?.name ?? "-"}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: 8,
+                                        }}
+                                    >
+                                        {t.cashier?.name ?? "-"}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: 8,
+                                        }}
+                                    >
+                                        {humanTrxStatus(t.status)}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: 8,
+                                        }}
+                                    >
+                                        {t.is_paid ? "Lunas" : "Belum Lunas"}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: 8,
+                                            textAlign: "right",
+                                        }}
+                                    >
+                                        {floatToIdCurrency(t.total)}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #ccc",
+                                            padding: 8,
+                                        }}
+                                    >
+                                        {ymdToIdDate(t.order_at, true)}
+                                        {t.completed_at
+                                            ? ` - ${ymdToIdDate(
+                                                  t.completed_at,
+                                                  true
+                                              )}`
+                                            : ""}
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    style={{
+                                        border: "1px solid #ccc",
+                                        padding: 8,
+                                        textAlign: "center",
+                                        color: "#666",
+                                        fontStyle: "italic",
+                                    }}
+                                    colSpan={8}
+                                >
+                                    Tidak ada data
                                 </td>
                             </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td className="p-2" colSpan={8}>
-                                Tidak ada data
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </>
     );
 };
 

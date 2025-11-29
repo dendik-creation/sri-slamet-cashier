@@ -55,14 +55,11 @@ Route::prefix('admin')
             Route::get('/', [AdminTransactionController::class, 'index'])->name('admin.transactions.index');
             Route::get('/print', [AdminTransactionController::class, 'print'])->name('admin.transactions.print');
             Route::get('/{id}', [AdminTransactionController::class, 'show'])->name('admin.transactions.show');
-            // Admin print uses AdminTransactionController@print with same filters as index
         });
 
         // Financial Report
         Route::prefix('reports')->group(function () {
-            // Same-page filtering (GET or POST) returns Index view
             Route::match(['get', 'post'], '/financial', [ReportController::class, 'adminReportView'])->name('admin.reports.financial.view');
-            // Print view (GET) consumes current filters via query string
             Route::get('/financial/print', [ReportController::class, 'adminReportGenerate'])->name('admin.reports.financial.print');
         });
 
@@ -95,6 +92,7 @@ Route::prefix('cashier')
             Route::get('/{id}', [CashierTransactionController::class, 'show'])->name('cashier.transactions.show');
             Route::get('/edit/{id}', [CashierTransactionController::class, 'edit'])->name('cashier.transactions.edit');
             Route::put('/update/{id}', [CashierTransactionController::class, 'update'])->name('cashier.transactions.update');
+            Route::delete('/{id}', [CashierTransactionController::class, 'destroy'])->name('cashier.transactions.destroy');
         });
     });
 

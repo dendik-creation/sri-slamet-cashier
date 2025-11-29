@@ -145,3 +145,13 @@ export const generateStringRand = (
     }
     return result;
 };
+
+export const roundingToNearestHundred = (value: number) => {
+    const tens = value % 100;
+    if (tens === 0) return value;
+    if (tens < 50) {
+        return value - tens;
+    } else {
+        return value + (100 - tens);
+    }
+};

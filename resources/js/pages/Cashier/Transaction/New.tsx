@@ -3,7 +3,11 @@ import {
     ErrorInput,
     SelectSearchInput,
 } from "@/components/custom/FormElement";
-import { floatToIdCurrency, getNowYmd } from "@/components/helper/helper";
+import {
+    floatToIdCurrency,
+    getNowYmd,
+    roundingToNearestHundred,
+} from "@/components/helper/helper";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import AppLayout, { useInertiaShared } from "@/partials/AppLayout";
@@ -61,7 +65,7 @@ const CashierTransactionNew = ({
             total: 0,
             payment: {
                 method: "",
-                amount: undefined,
+                amount: undefined as number | undefined,
             },
         },
     });
@@ -75,7 +79,7 @@ const CashierTransactionNew = ({
             ...data.trx,
             subtotal,
             tax_ppn: app_setting.tax_applied,
-            total,
+            total: roundingToNearestHundred(total),
         });
     }, [data.trx.trx_items]);
 
@@ -145,6 +149,30 @@ const CashierTransactionNew = ({
                 [key]: value,
             },
         });
+        if (key == "method" && typeof value === "string") {
+            setData("trx", {
+                ...data.trx,
+                payment: {
+                    ...data.trx.payment,
+                    method: value as string,
+                    amount:
+                        value != "CASH" && value != "TRANSFER"
+                            ? undefined
+                            : data.trx.total,
+                },
+            });
+        }
+        if (key == "amount" && typeof value === "number") {
+            if (value > data.trx.total) {
+                setData("trx", {
+                    ...data.trx,
+                    payment: {
+                        ...data.trx.payment,
+                        amount: data.trx.total,
+                    },
+                });
+            }
+        }
     };
 
     const handleAddTrxItem = () => {

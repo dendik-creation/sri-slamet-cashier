@@ -286,8 +286,8 @@ const CashierTransactionIndex = ({
                                                         </Button>
                                                     </span>
                                                 }
-                                                title="Hapus User"
-                                                description="Menghapus user menyebabkan kehilangan akses terhadap sistem. Apakah anda yakin ?"
+                                                title="Hapus transaksi"
+                                                description="Menghapus transaksi menyebabkan kehilangan akses terhadap sistem. Apakah anda yakin ?"
                                                 type="danger"
                                                 confirmAction={() =>
                                                     handleDelete(transaction.id)

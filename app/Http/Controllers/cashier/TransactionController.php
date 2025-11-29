@@ -15,6 +15,18 @@ use Inertia\Inertia;
 
 class TransactionController extends Controller
 {
+    private function roundingToNearestHundred($value)
+    {
+        $tens = $value % 100;
+        if ($tens === 0) {
+            return $value;
+        }
+        if ($tens < 50) {
+            return $value - $tens;
+        } else {
+            return $value + (100 - $tens);
+        }
+    }
     public function index(Request $request)
     {
         $by_search = $request->input('search', null);
@@ -108,7 +120,7 @@ class TransactionController extends Controller
             'subtotal' => $validated['trx']['subtotal'],
             'tax_ppn' => $validated['trx']['tax_ppn'],
             'order_at' => $validated['trx']['order_at'],
-            'total' => $validated['trx']['total'],
+            'total' => $this->roundingToNearestHundred($validated['trx']['total']),
             'is_paid' => false,
         ];
         $transaction_items = [];
@@ -226,6 +238,8 @@ class TransactionController extends Controller
             'trx.total' => 'required|numeric',
             'trx.payment.method' => 'nullable|string',
             'trx.payment.amount' => 'nullable|numeric',
+        ], [
+            'trx.invoice_code.unique' => 'Kode transaksi sudah digunakan pada transaksi lain',
         ]);
 
         $auth = Auth::user();
@@ -321,13 +335,13 @@ class TransactionController extends Controller
 
             // Recalculate totals based on non-refunded items
             $transaction->subtotal = $recalculatedSubtotal;
-            $transaction->total = $recalculatedSubtotal + $recalculatedSubtotal * ($transaction->tax_ppn / 100);
+            $transaction->total = $this->roundingToNearestHundred($recalculatedSubtotal + $recalculatedSubtotal * ($transaction->tax_ppn / 100));
 
             // Handle payment (paid or not)
             $totalPaid = 0;
             if (!empty($validated['trx']['payment']['method'])) {
                 $method = $validated['trx']['payment']['method'];
-                $amount = (int) $transaction->total || $validated['trx']['payment']['amount']; 
+                $amount = (int) $transaction->total; 
 
                 // Upsert payment
                 $existingPayment = $transaction->payment;
@@ -389,4 +403,12 @@ class TransactionController extends Controller
         }
     }
     
+    public function destroy($id)
+    {
+        $transaction = Transaction::where('id', $id)->firstOrFail();
+        $transaction->delete();
+
+        Session::flash('success', 'Transaksi berhasil dihapus');
+        return Inertia::location(route('cashier.transactions.index'));
+    }
 }
