@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 
 createInertiaApp({
     progress: {
-        color: "#f59e42",
+        color: "#496b74",
         includeCSS: true,
         showSpinner: true,
     },
@@ -17,7 +17,7 @@ createInertiaApp({
         createRoot(el).render(
             <Suspense fallback={<div>🔃 Load App</div>}>
                 <App {...props} />
-            </Suspense>
+            </Suspense>,
         );
     },
 });

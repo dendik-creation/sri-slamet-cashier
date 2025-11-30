@@ -64,7 +64,7 @@ const CashierTransactionIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["transactions"],
-            }
+            },
         );
     });
 
@@ -113,7 +113,7 @@ const CashierTransactionIndex = ({
                 <div className="">
                     <SelectSearchInput
                         className="w-full"
-                        placeholder="Pilih Status"
+                        placeholder="Pilih Status Transaksi"
                         value={filterData.status || ""}
                         options={[
                             {

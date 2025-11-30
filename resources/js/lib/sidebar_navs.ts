@@ -1,6 +1,7 @@
 import {
     BanknoteArrowUp,
     ContactRound,
+    FolderSync,
     Grid2X2,
     LucideProps,
     Receipt,
@@ -51,9 +52,15 @@ const adminNavs: NavItems = [
     },
     {
         type: "item",
-        title: "Aktivitas Transaksi",
-        url: "/admin/transactions",
-        icon: Receipt,
+        title: "Transaksi Baru",
+        url: "/admin/transactions/new",
+        icon: ScanBarcode,
+    },
+    {
+        type: "item",
+        title: "Daftar Transaksi",
+        url: "/admin/transactions/records",
+        icon: Tickets,
     },
     {
         type: "item",
@@ -71,6 +78,12 @@ const adminNavs: NavItems = [
         title: "Pengaturan Sistem",
         url: "/admin/app-setting",
         icon: Settings,
+    },
+    {
+        type: "item",
+        title: "Sinkronisasi Data",
+        url: "/admin/sync-data",
+        icon: FolderSync,
     },
 ];
 

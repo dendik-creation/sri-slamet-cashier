@@ -1,8 +1,19 @@
-import React, { useEffect, useRef } from "react";
-import AppLayout from "@/partials/AppLayout";
-import { PageTitle } from "@/Partials/PageTitle";
 import DynamicCard from "@/components/custom/DynamicCard";
-import { useForm, router } from "@inertiajs/react";
+import EmptyChart from "@/components/custom/EmptyChart";
+import EmptyTable from "@/components/custom/EmptyTable";
+import {
+    DatePickerInput,
+    SearchInput,
+    SelectSearchInput,
+} from "@/components/custom/FormElement";
+import {
+    floatToIdCurrency,
+    humanPaymentMethod,
+    humanTrxStatus,
+    inputDebounce,
+    ymdToIdDate,
+} from "@/components/helper/helper";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
@@ -12,31 +23,20 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import ReactApexChart from "react-apexcharts";
-import {
-    floatToIdCurrency,
-    humanPaymentMethod,
-    humanTrxStatus,
-    inputDebounce,
-    ymdToIdDate,
-} from "@/components/helper/helper";
+import AppLayout from "@/partials/AppLayout";
+import { PageTitle } from "@/Partials/PageTitle";
+import { router, useForm } from "@inertiajs/react";
 import {
     Calendar,
-    Wallet,
     ClipboardList,
-    Receipt,
-    Printer,
     PieChart,
+    Printer,
+    Receipt,
     TrendingUp,
-    Users,
+    Wallet,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-    DatePickerInput,
-    SelectSearchInput,
-} from "@/components/custom/FormElement";
-import EmptyChart from "@/components/custom/EmptyChart";
-import EmptyTable from "@/components/custom/EmptyTable";
+import React, { useEffect, useRef } from "react";
+import ReactApexChart from "react-apexcharts";
 
 type FullReportIndexProps = {
     title: string;
@@ -136,7 +136,7 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
             router.get(
                 `/admin/reports/financial?${params}`,
                 {},
-                { preserveScroll: true, replace: true }
+                { preserveScroll: true, replace: true },
             );
         }
     });
@@ -201,10 +201,10 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
     ];
 
     const paymentMethodLabels = Object.keys(
-        report.breakdown.payment_method || {}
+        report.breakdown.payment_method || {},
     );
     const paymentMethodSeries = Object.values(
-        report.breakdown.payment_method || {}
+        report.breakdown.payment_method || {},
     );
     const paymentMethodOptions: any = {
         chart: { type: "donut" },
@@ -214,10 +214,10 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
     };
 
     const statusLabels = Object.keys(
-        report.breakdown.status_distribution || {}
+        report.breakdown.status_distribution || {},
     );
     const statusSeries = Object.values(
-        report.breakdown.status_distribution || {}
+        report.breakdown.status_distribution || {},
     );
     const statusOptions: any = {
         chart: { type: "pie" },
@@ -244,12 +244,10 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
             >
                 <div className="flex flex-col col-span-1">
                     <label className="text-sm font-semibold mb-1">Cari</label>
-                    <input
-                        type="text"
-                        className="border rounded-md px-2 py-1 text-sm"
-                        placeholder="Invoice / Nama Pelanggan"
+                    <SearchInput
+                        placeholder="Cari Invoice / Nama Pelanggan"
                         value={data.search}
-                        onChange={(e) => handleChange("search", e.target.value)}
+                        onChange={(e) => handleChange("search", e.toString())}
                     />
                 </div>
                 <div className="flex flex-col col-span-1">
@@ -322,7 +320,7 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                                 (c: { label: string; value: number }) => ({
                                     label: c.label,
                                     value: c.value.toString(),
-                                })
+                                }),
                             ),
                         ]}
                         value={data.cashier}
@@ -331,8 +329,7 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                         removeValue={() => handleChange("cashier", "")}
                     />
                 </div>
-                {/* Payment method is no longer a filter; charts still show breakdown */}
-                <div className="flex items-end gap-2 col-span-2">
+                <div className="flex flex-col items-end justify-end col-span-1">
                     <Button
                         type="button"
                         variant="yellow"
@@ -347,7 +344,7 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                             }).toString();
                             router.visit(`/admin/reports/financial/print?${q}`);
                         }}
-                        className="w-full"
+                        className="w-full mb-0.5"
                     >
                         <Printer />
                         <span>Cetak Laporan</span>
@@ -373,7 +370,7 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                 <DynamicCard
                     title="Rata-rata / Trx"
                     value={floatToIdCurrency(
-                        report.summary.average_transaction
+                        report.summary.average_transaction,
                     )}
                     icon={<Receipt size={120} className="text-yellow-200" />}
                     color="yellow"
@@ -537,11 +534,11 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                                                     </TableCell>
                                                     <TableCell>
                                                         {floatToIdCurrency(
-                                                            row.total
+                                                            row.total,
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
-                                            )
+                                            ),
                                         )
                                     ) : (
                                         <EmptyTable colSpan={3} />
@@ -588,11 +585,11 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                                                     </TableCell>
                                                     <TableCell>
                                                         {floatToIdCurrency(
-                                                            row.total
+                                                            row.total,
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
-                                            )
+                                            ),
                                         )
                                     ) : (
                                         <EmptyTable colSpan={3} />
@@ -660,7 +657,7 @@ const AdminFinancialReportIndex: React.FC<FullReportIndexProps> = ({
                                             </TableCell>
                                             <TableCell>
                                                 {floatToIdCurrency(
-                                                    t.is_paid ? 0 : t.total
+                                                    t.is_paid ? 0 : t.total,
                                                 )}
                                             </TableCell>
                                             <TableCell>

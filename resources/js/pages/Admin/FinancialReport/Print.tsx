@@ -62,7 +62,7 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
         window.addEventListener("afterprint", handleAfterPrint);
         const printTimeout = setTimeout(
             () => !isProcessingPrint && window.print(),
-            150
+            150,
         );
         return () => {
             clearTimeout(printTimeout);
@@ -108,7 +108,7 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                     <DynamicCard
                         title="Rata-rata / Trx"
                         value={floatToIdCurrency(
-                            report.summary.average_transaction
+                            report.summary.average_transaction,
                         )}
                         icon={<Receipt size={48} className="text-yellow-200" />}
                         color="yellow"
@@ -118,7 +118,7 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                     <DynamicCard
                         title="Sisa Tagihan"
                         value={floatToIdCurrency(
-                            report.summary.total_outstanding
+                            report.summary.total_outstanding,
                         )}
                         icon={<Calendar size={48} className="text-red-200" />}
                         color="red"
@@ -155,8 +155,8 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                         {floatToIdCurrency(
                             Math.round(
                                 report.summary.total_revenue /
-                                    Math.max(report.summary.period_days, 1)
-                            )
+                                    Math.max(report.summary.period_days, 1),
+                            ),
                         )}
                     </p>
                 </div>
@@ -167,7 +167,7 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                     <p className="font-semibold text-sm">
                         {Math.round(
                             report.summary.total_transactions /
-                                Math.max(report.summary.period_days, 1)
+                                Math.max(report.summary.period_days, 1),
                         )}
                     </p>
                 </div>
@@ -176,16 +176,30 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
             <h2 className="text-sm font-semibold mb-2">
                 Semua Transaksi Periode
             </h2>
-            <table className="w-full border text-[11px] mb-8">
+            <table className="w-full border-2 border-gray-400 text-[12px] mb-8">
                 <thead>
-                    <tr className="bg-gray-100">
-                        <th className="p-1">#</th>
-                        <th className="p-1">Invoice</th>
-                        <th className="p-1">Status</th>
-                        <th className="p-1">Waktu Perbaikan</th>
-                        <th className="p-1">Status Tagihan</th>
-                        <th className="p-1">Total</th>
-                        <th className="p-1">Sisa</th>
+                    <tr className="bg-gray-200 border-b-2 border-gray-400">
+                        <th className="p-2 text-gray-800 font-semibold border border-black">
+                            #
+                        </th>
+                        <th className="p-2 text-gray-800 font-semibold border border-black">
+                            Invoice
+                        </th>
+                        <th className="p-2 text-gray-800 font-semibold border border-black">
+                            Status
+                        </th>
+                        <th className="p-2 text-gray-800 font-semibold border border-black">
+                            Waktu Perbaikan
+                        </th>
+                        <th className="p-2 text-gray-800 font-semibold border border-black">
+                            Status Tagihan
+                        </th>
+                        <th className="p-2 text-gray-800 font-semibold border border-black text-right">
+                            Total
+                        </th>
+                        <th className="p-2 text-gray-800 font-semibold border border-black text-right">
+                            Sisa
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -193,31 +207,39 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                         report.tables.transactions.map((t, i) => (
                             <tr
                                 key={t.id}
-                                className={i % 2 ? "bg-white" : "bg-gray-50"}
+                                className={`${i % 2 ? "bg-white" : "bg-gray-100"} border-b border-black`}
                             >
-                                <td className="p-1">{i + 1}</td>
-                                <td className="p-1">{t.invoice_code}</td>
-                                <td className="p-1">
+                                <td className="p-2 text-gray-900 border border-black">
+                                    {i + 1}
+                                </td>
+                                <td className="p-2 text-gray-900 border border-black">
+                                    {t.invoice_code}
+                                </td>
+                                <td className="p-2 text-gray-900 border border-black">
                                     {humanTrxStatus(t.status)}
                                 </td>
-                                <td className="p-1">
+                                <td className="p-2 text-gray-900 border border-black">
                                     {ymdToIdDate(t.order_at)} -{" "}
-                                    {ymdToIdDate(t.completed_at || "")}
+                                    {ymdToIdDate(t.completed_at) ??
+                                        "Belum Selesai"}
                                 </td>
-                                <td className="p-1">
+                                <td className="p-2 text-gray-900 border border-black">
                                     {t.is_paid ? "Lunas" : "Belum Lunas"}
                                 </td>
-                                <td className="p-1 text-right">
+                                <td className="p-2 text-gray-900 border border-black text-right">
                                     {floatToIdCurrency(t.total)}
                                 </td>
-                                <td className="p-1 text-right">
+                                <td className="p-2 text-gray-900 border border-black text-right">
                                     {floatToIdCurrency(t.is_paid ? 0 : t.total)}
                                 </td>
                             </tr>
                         ))
                     ) : (
-                        <tr>
-                            <td className="p-2" colSpan={7}>
+                        <tr className="bg-white">
+                            <td
+                                className="p-2 text-gray-900 border border-black"
+                                colSpan={7}
+                            >
                                 Tidak ada data
                             </td>
                         </tr>

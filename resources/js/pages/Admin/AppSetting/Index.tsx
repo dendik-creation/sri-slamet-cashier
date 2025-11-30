@@ -34,7 +34,7 @@ const AdminAppSettingIndex = ({
     const handleChange = (
         e: React.ChangeEvent<
             HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-        >
+        >,
     ) => {
         const { name, value } = e.target;
         setData(name as keyof AppSetting, value);
@@ -123,14 +123,14 @@ const AdminAppSettingIndex = ({
                             value={data.tax_applied ?? ""}
                             onChange={handleChange}
                             className={cn(
-                                errors.tax_applied && "border-red-500"
+                                errors.tax_applied && "border-red-500",
                             )}
                         />
                         {errors.tax_applied && (
                             <ErrorInput error={errors.tax_applied} />
                         )}
                     </div>
-                    <div className="flex flex-col w-full md:col-span-2">
+                    <div className="flex flex-col w-full">
                         <label
                             htmlFor="head_address"
                             className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1"
@@ -145,14 +145,14 @@ const AdminAppSettingIndex = ({
                             onChange={handleChange}
                             className={cn(
                                 "border border-input rounded-md px-3 py-2 text-sm min-h-20 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-                                errors.head_address && "border-red-500"
+                                errors.head_address && "border-red-500",
                             )}
                         />
                         {errors.head_address && (
                             <ErrorInput error={errors.head_address} />
                         )}
                     </div>
-                    <div className="flex flex-col w-full md:col-span-2">
+                    <div className="flex flex-col w-full">
                         <label
                             htmlFor="branch_address"
                             className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1"
@@ -167,7 +167,7 @@ const AdminAppSettingIndex = ({
                             onChange={handleChange}
                             className={cn(
                                 "border border-input rounded-md px-3 py-2 text-sm min-h-20 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-                                errors.branch_address && "border-red-500"
+                                errors.branch_address && "border-red-500",
                             )}
                         />
                         {errors.branch_address && (

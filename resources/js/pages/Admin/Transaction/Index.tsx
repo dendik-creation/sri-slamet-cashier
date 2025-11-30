@@ -22,12 +22,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Eye, Pencil, Printer, Trash2 } from "lucide-react";
 import EmptyTable from "@/components/custom/EmptyTable";
 import { Badge } from "@/components/ui/badge";
 import { SelectOption } from "@/types/global";
+import ConfirmDialog from "@/components/custom/ConfirmDialog";
 
 const AdminTransactionIndex = ({
     title,
@@ -53,7 +54,7 @@ const AdminTransactionIndex = ({
 
     const debounceSearch = inputDebounce((data: typeof filterData) => {
         router.get(
-            "/admin/transactions",
+            "/admin/transactions/records",
             {
                 search: data.search,
                 status: data.status,
@@ -66,9 +67,17 @@ const AdminTransactionIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["transactions"],
-            }
+            },
         );
     });
+
+    const handleDelete = (id: number) => {
+        router.delete(`/admin/transactions/${id}`, {
+            preserveScroll: true,
+            replace: true,
+            only: ["transactions"],
+        });
+    };
 
     const buildTrxStatus = (status: string) => {
         const colorByStatus: {
@@ -107,11 +116,11 @@ const AdminTransactionIndex = ({
                 <div className="w-full">
                     <SelectSearchInput
                         className="w-full"
-                        placeholder="Pilih Status"
+                        placeholder="Pilih Status Transaksi"
                         value={filterData.status || ""}
                         options={[
                             {
-                                label: "Dalam Proses",
+                                label: "Belum Diambil",
                                 value: "IN_PROGRESS",
                             },
                             {
@@ -277,7 +286,7 @@ const AdminTransactionIndex = ({
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         <Link
-                                            href={`/admin/transactions/${transaction.id}`}
+                                            href={`/cashier/transactions/${transaction.id}`}
                                         >
                                             <Button
                                                 size={"icon"}
@@ -286,6 +295,34 @@ const AdminTransactionIndex = ({
                                                 <Eye />
                                             </Button>
                                         </Link>
+                                        <Link
+                                            href={`/admin/transactions/edit/${transaction.id}`}
+                                        >
+                                            <Button
+                                                size={"icon"}
+                                                variant={"blue"}
+                                            >
+                                                <Pencil />
+                                            </Button>
+                                        </Link>
+                                        <ConfirmDialog
+                                            triggerNode={
+                                                <span>
+                                                    <Button
+                                                        variant={"red"}
+                                                        size={"icon"}
+                                                    >
+                                                        <Trash2 />
+                                                    </Button>
+                                                </span>
+                                            }
+                                            title="Hapus transaksi"
+                                            description="Menghapus transaksi menyebabkan kehilangan akses terhadap sistem. Apakah anda yakin ?"
+                                            type="danger"
+                                            confirmAction={() =>
+                                                handleDelete(transaction.id)
+                                            }
+                                        />
                                     </div>
                                 </TableCell>
                             </TableRow>

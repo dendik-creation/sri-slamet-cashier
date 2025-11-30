@@ -48,7 +48,6 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
     const { flash } = useInertiaShared();
 
     const initialCustomer = transaction.customer || null;
-    console.log(transaction);
 
     const { data, setData, put, processing, errors, setError, clearErrors } =
         useForm({
@@ -93,7 +92,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                 if (item.status === "REFUNDED") return acc;
                 return acc + (item.line_total || 0);
             },
-            0
+            0,
         );
         const total = subtotal + subtotal * (app_setting.tax_applied / 100);
         setData("trx", {
@@ -108,7 +107,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
     const handleChangeTrx = (key: keyof typeof data.trx, value: string) => {
         if (key === "customer_id") {
             const selectedCustomer = customers.find(
-                (c) => c.value.toString() === value
+                (c) => c.value.toString() === value,
             );
             if (selectedCustomer) {
                 setData("trx", {
@@ -138,7 +137,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
     const handleChangeTrxItem = (
         index: number,
         key: keyof TransactionItemEdit,
-        value: string | number | undefined
+        value: string | number | undefined,
     ) => {
         const updatedItems = [...data.trx.trx_items];
         updatedItems[index] = { ...updatedItems[index], [key]: value } as any;
@@ -150,7 +149,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
 
     const handleChangePayment = (
         key: keyof typeof data.trx.payment,
-        value: string | number | undefined
+        value: string | number | undefined,
     ) => {
         setData("trx", {
             ...data.trx,
@@ -198,7 +197,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
 
     const handleRemoveTrxItem = (index: number) => {
         const updatedItems = data.trx.trx_items.filter(
-            (_item: TransactionItemEdit, idx: number) => idx !== index
+            (_item: TransactionItemEdit, idx: number) => idx !== index,
         );
         setData("trx", { ...data.trx, trx_items: updatedItems });
     };
@@ -241,14 +240,14 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                 ) {
                     (setError as any)(
                         `trx.trx_items.${index}.description`,
-                        "wajib diisi"
+                        "wajib diisi",
                     );
                     isValid = false;
                 }
                 if (item.line_total === undefined || item.line_total === null) {
                     (setError as any)(
                         `trx.trx_items.${index}.line_total`,
-                        "wajib diisi"
+                        "wajib diisi",
                     );
                     isValid = false;
                 }
@@ -259,12 +258,12 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                     ) {
                         (setError as any)(
                             `trx.trx_items.${index}.refund_reason`,
-                            "Alasan refund wajib"
+                            "Alasan refund wajib",
                         );
                         isValid = false;
                     }
                 }
-            }
+            },
         );
 
         const paymentMethodFilled =
@@ -276,14 +275,14 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
             if (!paymentMethodFilled) {
                 (setError as any)(
                     `trx.payment.method`,
-                    "Metode pembayaran wajib diisi"
+                    "Metode pembayaran wajib diisi",
                 );
                 isValid = false;
             }
             if (!paymentAmountFilled) {
                 (setError as any)(
                     `trx.payment.amount`,
-                    "Jumlah pembayaran wajib diisi"
+                    "Jumlah pembayaran wajib diisi",
                 );
                 isValid = false;
             }
@@ -332,7 +331,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                     onChange={(value) =>
                                         handleChangeTrx(
                                             "customer_id",
-                                            value.toString()
+                                            value.toString(),
                                         )
                                     }
                                     placeholder="Pilih pelanggan"
@@ -408,7 +407,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                     onChange={(e) =>
                                         handleChangeTrx(
                                             "invoice_code",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="Masukkan Kode Transaksi"
@@ -428,7 +427,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                     onChange={(value) =>
                                         handleChangeTrx(
                                             "order_at",
-                                            value as string
+                                            value as string,
                                         )
                                     }
                                     mode="single"
@@ -450,7 +449,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                     onChange={(value) =>
                                         handleChangeTrx(
                                             "completed_at",
-                                            value as string
+                                            value as string,
                                         )
                                     }
                                     mode="single"
@@ -485,7 +484,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                         data.trx.trx_items.map(
                                             (
                                                 item: TransactionItemEdit,
-                                                index: number
+                                                index: number,
                                             ) => (
                                                 <div
                                                     className="flex items-start gap-3 mb-2"
@@ -529,7 +528,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                                     index,
                                                                     "description",
                                                                     e.target
-                                                                        .value as string
+                                                                        .value as string,
                                                                 )
                                                             }
                                                             style={{
@@ -580,8 +579,8 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                                     "line_total",
                                                                     Number(
                                                                         e.target
-                                                                            .value
-                                                                    )
+                                                                            .value,
+                                                                    ),
                                                                 )
                                                             }
                                                         />
@@ -614,12 +613,12 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                                     item.status
                                                                 }
                                                                 onChange={(
-                                                                    value
+                                                                    value,
                                                                 ) =>
                                                                     handleChangeTrxItem(
                                                                         index,
                                                                         "status",
-                                                                        value as any
+                                                                        value as any,
                                                                     )
                                                                 }
                                                                 placeholder="Pilih status"
@@ -627,7 +626,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                                     handleChangeTrxItem(
                                                                         index,
                                                                         "status",
-                                                                        "ACTIVE"
+                                                                        "ACTIVE",
                                                                     )
                                                                 }
                                                             />
@@ -640,14 +639,14 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                                         ""
                                                                     }
                                                                     onChange={(
-                                                                        e
+                                                                        e,
                                                                     ) =>
                                                                         handleChangeTrxItem(
                                                                             index,
                                                                             "refund_reason",
                                                                             e
                                                                                 .target
-                                                                                .value
+                                                                                .value,
                                                                         )
                                                                     }
                                                                     placeholder="Alasan refund"
@@ -671,7 +670,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                         <Button
                                                             onClick={() =>
                                                                 handleRemoveTrxItem(
-                                                                    index
+                                                                    index,
                                                                 )
                                                             }
                                                             variant={"red"}
@@ -684,7 +683,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                         </Button>
                                                     </div>
                                                 </div>
-                                            )
+                                            ),
                                         )}
 
                                     {data.trx.trx_items.length === 0 && (
@@ -718,7 +717,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                         onChange={(value) =>
                                             handleChangePayment(
                                                 "method",
-                                                value.toString()
+                                                value.toString(),
                                             )
                                         }
                                         options={[
@@ -763,7 +762,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                                 "amount",
                                                 e.target.value
                                                     ? Number(e.target.value)
-                                                    : undefined
+                                                    : undefined,
                                             )
                                         }
                                         placeholder="Masukkan Nominal Pembayaran"
@@ -790,7 +789,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                         </h6>
                                         <span>
                                             {floatToIdCurrency(
-                                                data.trx.subtotal
+                                                data.trx.subtotal,
                                             )}
                                         </span>
                                     </div>
@@ -803,7 +802,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                             {floatToIdCurrency(
                                                 data.trx.subtotal *
                                                     (app_setting.tax_applied /
-                                                        100)
+                                                        100),
                                             )}
                                         </span>
                                     </div>

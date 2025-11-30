@@ -16,32 +16,32 @@ class UserSeeder extends Seeder
     {
         $now = now();
         $admin = [
-            'username' => 'admin',
-            'name' => 'Tuan Alam',
-            'password' => Hash::make('12345'),
-            'role' => 'ADMIN',
-            'created_at' => $now,
-            'updated_at' => $now,
+            "username" => "admin",
+            "name" => "Tuan Alam",
+            "password" => Hash::make("12345"),
+            "role" => "ADMIN",
+            "created_at" => $now,
+            "updated_at" => $now,
         ];
         $cashiers = [
             [
-                'username' => 'kasir1',
-                'name' => 'Kasir Satu',
-                'password' => Hash::make('12345'),
-                'role' => 'CASHIER',
-                'created_at' => $now,
-                'updated_at' => $now,
+                "username" => "kasir_1",
+                "name" => "Kasir Satu",
+                "password" => Hash::make("12345"),
+                "role" => "CASHIER",
+                "created_at" => $now,
+                "updated_at" => $now,
             ],
             [
-                'username' => 'kasir2',
-                'name' => 'Kasir Dua',
-                'password' => Hash::make('12345'),
-                'role' => 'CASHIER',
-                'created_at' => $now,
-                'updated_at' => $now,
+                "username" => "kasir_2",
+                "name" => "Kasir Dua",
+                "password" => Hash::make("12345"),
+                "role" => "CASHIER",
+                "created_at" => $now,
+                "updated_at" => $now,
             ],
         ];
 
-        DB::table('users')->insert(array_merge([$admin], $cashiers));
+        DB::table("users")->insert(array_merge([$admin], $cashiers));
     }
 }
