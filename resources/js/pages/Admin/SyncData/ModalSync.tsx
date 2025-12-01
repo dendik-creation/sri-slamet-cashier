@@ -14,11 +14,18 @@ import {
     DialogHeader,
 } from "@/components/ui/dialog";
 
-const AdminModalSync = ({
-    available_cashiers,
-}: {
-    available_cashiers: SelectOption[];
-}) => {
+const deviceLocationTargets: SelectOption[] = [
+    {
+        label: "Kasir - Bengkel Utara",
+        value: "NORTH",
+    },
+    {
+        label: "Kasir - Bengkel Selatan",
+        value: "SOUTH",
+    },
+];
+
+const AdminModalSync = () => {
     const {
         data,
         setData,
@@ -29,7 +36,7 @@ const AdminModalSync = ({
         clearErrors,
         setError,
     } = useForm({
-        cashier_id: "",
+        location_target: "",
     });
 
     const handleChange = (key: keyof typeof data, value: string) => {
@@ -39,8 +46,8 @@ const AdminModalSync = ({
     const validateForm = (): boolean => {
         let isValid = true;
         clearErrors();
-        if (!data.cashier_id) {
-            setError("cashier_id", "Target kasir wajib diisi");
+        if (!data.location_target) {
+            setError("location_target", "Target bengkel wajib diisi");
             isValid = false;
         }
         return isValid;
@@ -71,22 +78,25 @@ const AdminModalSync = ({
                     </DialogDescription>
                     <div className="flex flex-col w-full">
                         <label
-                            htmlFor="cashier_id"
+                            htmlFor="location_target"
                             className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1"
                         >
-                            Target Kasir
+                            Target Bengkel
                         </label>
                         <SelectSearchInput
-                            options={available_cashiers}
-                            placeholder="Pilih kasir"
-                            value={data.cashier_id}
+                            options={deviceLocationTargets}
+                            placeholder="Pilih bengkel target sinkronisasi"
+                            value={data.location_target}
                             onChange={(value) =>
-                                handleChange("cashier_id", value.toString())
+                                handleChange(
+                                    "location_target",
+                                    value.toString(),
+                                )
                             }
                             disabled={processing}
                         />
-                        {errors.cashier_id && (
-                            <ErrorInput error={errors.cashier_id} />
+                        {errors.location_target && (
+                            <ErrorInput error={errors.location_target} />
                         )}
                     </div>
                 </DialogHeader>

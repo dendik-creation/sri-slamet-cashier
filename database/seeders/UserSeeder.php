@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
         $cashiers = [
             [
                 "username" => "kasir_1",
-                "name" => "Kasir Satu",
+                "name" => "Kasir Utara",
                 "password" => Hash::make("12345"),
                 "role" => "CASHIER",
                 "created_at" => $now,
@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
             ],
             [
                 "username" => "kasir_2",
-                "name" => "Kasir Dua",
+                "name" => "Kasir Selatan",
                 "password" => Hash::make("12345"),
                 "role" => "CASHIER",
                 "created_at" => $now,

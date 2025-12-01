@@ -31,15 +31,21 @@ import { cn } from "@/lib/utils";
 import axios from "axios";
 
 type AdminSyncDataIndexProps = PageTitleProps & {
-    available_cashiers: SelectOption[];
     sync_folders: {
+        time: {
+            pending_at: string;
+            syncing_at: string | null;
+            completed_at: string | null;
+            failed_at: string | null;
+        };
+        target: {
+            name: string;
+            device_code: string;
+            location: "NORTH" | "SOUTH";
+        };
         folder_name: string;
-        request_at: string;
-        request_to: string;
-        device_code: string;
         status: string;
         error_message: string | null;
-        respond_at: string | null;
     }[];
 };
 
@@ -58,8 +64,8 @@ const CreateStatusBadge = ({
     };
 
     const labelByStatus: { [key: string]: string } = {
-        PENDING: "Disiapkan kasir",
-        SYNCING: "Sinkronisasi..",
+        PENDING: "Menunggu",
+        SYNCING: "Proses Berlangsung",
         COMPLETED: "Berhasil",
         FAILED: "Gagal",
     };
@@ -102,7 +108,6 @@ const CreateStatusBadge = ({
 const AdminSyncDataIndex = ({
     title,
     description,
-    available_cashiers,
     sync_folders,
 }: AdminSyncDataIndexProps) => {
     const [syncFolders, setSyncFolders] = useState(sync_folders);
@@ -139,7 +144,9 @@ const AdminSyncDataIndex = ({
                               ...item,
                               status: response.data.status,
                               error_message: response.data.error_message,
-                              respond_at: response.data.respond_at,
+                              time: response.data.time,
+                              target: response.data.target,
+                              folder_name: response.data.folder_name,
                           }
                         : item,
                 );
@@ -164,7 +171,9 @@ const AdminSyncDataIndex = ({
     useEffect(() => {
         const interval = setInterval(() => {
             syncFolders.forEach((item) => {
-                refreshStatus(item.folder_name);
+                if (item.status != "COMPLETED" && item.status != "FAILED") {
+                    refreshStatus(item.folder_name);
+                }
             });
         }, 10000);
 
@@ -174,7 +183,7 @@ const AdminSyncDataIndex = ({
         <AppLayout>
             <div className="flex justify-between items-center mb-3">
                 <PageTitle title={title} description={description} />
-                <AdminModalSync available_cashiers={available_cashiers} />
+                <AdminModalSync />
             </div>
 
             <div className="rounded-md border">
@@ -185,16 +194,13 @@ const AdminSyncDataIndex = ({
                                 #
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Untuk Kasir
-                            </TableHead>
-                            <TableHead className="bg-stone-200 font-semibold">
-                                Waktu Permintaan
+                                Untuk Bengkel
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
                                 Status Sinkronisasi
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
-                                Waktu Selesai
+                                Waktu Sinkronisasi
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
                                 Error (Jika ada)
@@ -211,14 +217,11 @@ const AdminSyncDataIndex = ({
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
-                                            <span>{item.request_to}</span>
+                                            <span>{item.target.name}</span>
                                             <pre className="text-xs text-stone-500">
-                                                {item.device_code}
+                                                {item.target.device_code}
                                             </pre>
                                         </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {ymdToIdDate(item.request_at, true)}
                                     </TableCell>
                                     <TableCell>
                                         <CreateStatusBadge
@@ -232,8 +235,58 @@ const AdminSyncDataIndex = ({
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        {ymdToIdDate(item.respond_at, true) ||
-                                            "-"}
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-1 text-sm">
+                                                <Hourglass
+                                                    className="text-yellow-600"
+                                                    size={18}
+                                                />
+                                                <span>
+                                                    {ymdToIdDate(
+                                                        item.time.pending_at,
+                                                        true,
+                                                    ) || "-"}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1 text-sm">
+                                                <RefreshCcwDot
+                                                    size={18}
+                                                    className="text-blue-600"
+                                                />
+                                                <span>
+                                                    {ymdToIdDate(
+                                                        item.time.syncing_at,
+                                                        true,
+                                                    ) || "-"}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1 text-sm">
+                                                <CloudCheck
+                                                    className="text-green-600"
+                                                    size={18}
+                                                />
+                                                <span>
+                                                    {ymdToIdDate(
+                                                        item.time.completed_at,
+                                                        true,
+                                                    ) || "-"}
+                                                </span>
+                                            </div>
+                                            {item.status != "COMPLETED" && (
+                                                <div className="flex items-center gap-1 text-sm">
+                                                    <CloudAlert
+                                                        className="text-red-600"
+                                                        size={18}
+                                                    />
+                                                    <span>
+                                                        {ymdToIdDate(
+                                                            item.time.failed_at,
+                                                            true,
+                                                        ) || "-"}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         {item.error_message
@@ -241,33 +294,42 @@ const AdminSyncDataIndex = ({
                                             : "-"}
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {(() => {
-                                                const isSyncing =
-                                                    !!findSyncingFolder(
-                                                        item.folder_name,
-                                                    )?.is_syncing;
-                                                const handleRefresh = () =>
-                                                    refreshStatus(
-                                                        item.folder_name,
+                                        {item.status == "COMPLETED" ||
+                                        item.status == "FAILED" ? (
+                                            <span className="text-sm text-stone-500">
+                                                Tidak ada aksi
+                                            </span>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                {(() => {
+                                                    const isSyncing =
+                                                        !!findSyncingFolder(
+                                                            item.folder_name,
+                                                        )?.is_syncing;
+                                                    const handleRefresh = () =>
+                                                        refreshStatus(
+                                                            item.folder_name,
+                                                        );
+                                                    return (
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={
+                                                                handleRefresh
+                                                            }
+                                                            disabled={isSyncing}
+                                                        >
+                                                            <RefreshCcwDot
+                                                                className={cn(
+                                                                    isSyncing &&
+                                                                        "animate-spin",
+                                                                )}
+                                                            />
+                                                            <span>Refresh</span>
+                                                        </Button>
                                                     );
-                                                return (
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={handleRefresh}
-                                                        disabled={isSyncing}
-                                                    >
-                                                        <RefreshCcwDot
-                                                            className={cn(
-                                                                isSyncing &&
-                                                                    "animate-spin",
-                                                            )}
-                                                        />
-                                                        <span>Refresh</span>
-                                                    </Button>
-                                                );
-                                            })()}
-                                        </div>
+                                                })()}
+                                            </div>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}

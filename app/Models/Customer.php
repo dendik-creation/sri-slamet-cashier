@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Customer extends Model
 {
-    use SoftDeletes;
-    protected $guarded = ['id'];
+    protected $guarded = ["id"];
+    protected $casts = [
+        "phone" => "string",
+        "address" => "string",
+    ];
 }

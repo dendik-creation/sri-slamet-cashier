@@ -12,14 +12,11 @@ return [
     "pagination_size" => env("PAGINATION_SIZE", 10),
     "syncthing" => [
         "sync_path" => env("SYNCTHING_PATH", ""),
-        "admin" => [
-            "device_code" => env("SYNCTHING_ADMIN_DEVICE_CODE", ""),
-        ],
-        "kasir1" => [
-            "device_code" => env("SYNCTHING_KASIR1_DEVICE_CODE", ""),
-        ],
-        "kasir2" => [
-            "device_code" => env("SYNCTHING_KASIR2_DEVICE_CODE", ""),
+        "device_location" => env("SYNCTHING_DEVICE_LOCATION", ""),
+        "device_code" => [
+            "central" => env("SYNCTHING_ADMIN_DEVICE_CODE", ""),
+            "north" => env("SYNCTHING_KASIR1_DEVICE_CODE", ""),
+            "south" => env("SYNCTHING_KASIR2_DEVICE_CODE", ""),
         ],
     ],
 ];

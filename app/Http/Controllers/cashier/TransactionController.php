@@ -197,7 +197,7 @@ class TransactionController extends Controller
         }
 
         Session::flash("success", "Transaksi berhasil disimpan");
-        return Inertia::location(route("cashier.transactions.new"));
+        return Inertia::location(route("cashier.transactions.show"));
     }
 
     public function show($id)

@@ -18,32 +18,27 @@ class SyncDataController extends Controller
         "FAILED",
     ];
 
-    private function getDeviceCodeByCashier(User $cashier)
+    private function humanizeLocationTarget($location_target)
     {
-        $cashier_username = $cashier->username;
-        $cashier_target = explode("_", $cashier_username)[1];
+        return match (strtolower($location_target)) {
+            "north" => "Bengkel Utara",
+            "south" => "Bengkel Selatan",
+            default => "Lokasi Tidak Dikenal",
+        };
+    }
 
-        $device_code_kasir_1 = config("custom.syncthing.kasir1.device_code");
-        $device_code_kasir_2 = config("custom.syncthing.kasir2.device_code");
-
-        return match ($cashier_target) {
-            "1" => $device_code_kasir_1,
-            "2" => $device_code_kasir_2,
+    private function getDeviceCodeByLocationTarget($location_target)
+    {
+        $device_codes = config("custom.syncthing.device_code");
+        return match (strtolower($location_target)) {
+            "north" => $device_codes["north"],
+            "south" => $device_codes["south"],
             default => null,
         };
     }
 
     public function index()
     {
-        $available_cashiers = User::where("role", User::ROLE_CASHIER)
-            ->get()
-            ->map(function ($cashier) {
-                return [
-                    "label" => $cashier->name,
-                    "value" => $cashier->id,
-                ];
-            });
-
         $root_path = rtrim(
             config("custom.syncthing.sync_path"),
             DIRECTORY_SEPARATOR,
@@ -71,22 +66,29 @@ class SyncDataController extends Controller
             $action = json_decode(file_get_contents($action_file), true);
 
             // Meta Data
-            $request_at = $action["request_at"];
-            $request_to = $action["request_to"];
-            $status = $action["status"];
-            $device_code = $action["device_code"];
-            $respond_at = $action["respond_at"];
+            $pending_at = $action["time"]["pending_at"] ?? null;
+            $syncing_at = $action["time"]["syncing_at"] ?? null;
+            $completed_at = $action["time"]["completed_at"] ?? null;
+            $target_name = $action["target"]["name"] ?? null;
+            $device_code = $action["target"]["device_code"] ?? null;
+            $status = $action["status"] ?? null;
             $error_message =
                 $status === "FAILED"
                     ? $action["error_message"] ?? "Unknown Error"
                     : null;
+
             $sync_folders[] = [
                 "folder_name" => $folder_name,
-                "request_to" => $request_to,
-                "request_at" => $request_at,
-                "device_code" => $device_code,
                 "status" => $status,
-                "respond_at" => $respond_at,
+                "time" => [
+                    "pending_at" => $pending_at,
+                    "syncing_at" => $syncing_at,
+                    "completed_at" => $completed_at,
+                ],
+                "target" => [
+                    "name" => $target_name,
+                    "device_code" => $device_code,
+                ],
                 "error_message" => $error_message,
             ];
         }
@@ -100,7 +102,6 @@ class SyncDataController extends Controller
             "title" => "Sinkronisasi Data",
             "description" =>
                 "Sinkronisasi data dari kasir ke admin yang Anda pegang",
-            "available_cashiers" => $available_cashiers,
             "sync_folders" => $sync_folders,
         ]);
     }
@@ -120,7 +121,9 @@ class SyncDataController extends Controller
         $action = json_decode(file_get_contents($action_file), true);
         return response()->json([
             "status" => $action["status"],
-            "respond_at" => $action["respond_at"],
+            "time" => $action["time"],
+            "target" => $action["target"],
+            "folder_name" => $action["folder_name"],
             "error_message" => $action["error_message"],
         ]);
     }
@@ -129,15 +132,12 @@ class SyncDataController extends Controller
     {
         $validated = $request->validate(
             [
-                "cashier_id" => "required|exists:users,id",
+                "location_target" => "required",
             ],
             [
-                "cashier_id.required" => "Kasir wajib dipilih.",
-                "cashier_id.exists" => "Kasir tidak ditemukan.",
+                "location_target.required" => "Target bengkel wajib diisi.",
             ],
         );
-
-        $cashier = User::find($validated["cashier_id"]);
 
         // Get folder path
         $root_path = rtrim(
@@ -152,14 +152,25 @@ class SyncDataController extends Controller
             mkdir($full_path, 0777, true);
         }
 
+        $location_target = $validated["location_target"];
+
         // action.json
         $action = [
-            "request_at" => now()->format("Y-m-d H:i:s"),
-            "request_to" => $cashier->name,
-            "request_to_username" => $cashier->username,
-            "device_code" => $this->getDeviceCodeByCashier($cashier),
+            "time" => [
+                "pending_at" => now()->format("Y-m-d H:i:s"),
+                "syncing_at" => null,
+                "completed_at" => null,
+                "failed_at" => null,
+            ],
+            "target" => [
+                "name" => $this->humanizeLocationTarget($location_target),
+                "location" => $location_target,
+                "device_code" => $this->getDeviceCodeByLocationTarget(
+                    $location_target,
+                ),
+            ],
+            "folder_name" => $folder_name,
             "status" => "PENDING",
-            "respond_at" => null,
             "error_message" => null,
         ];
 

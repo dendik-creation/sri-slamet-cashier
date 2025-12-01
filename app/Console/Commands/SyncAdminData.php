@@ -26,12 +26,21 @@ class SyncAdminData extends Command
     /**
      * Execute the console command.
      */
+    private function isRootPathExist(string $root_path): bool
+    {
+        return is_dir($root_path) && file_exists($root_path);
+    }
     public function handle()
     {
         $root = rtrim(
             config("custom.syncthing.sync_path"),
             DIRECTORY_SEPARATOR,
         );
+
+        if (!$this->isRootPathExist($root)) {
+            Log::error("sync:admin → Path root sync tidak ditemukan");
+            return Command::INVALID;
+        }
 
         $folders = glob($root . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
 
@@ -51,8 +60,8 @@ class SyncAdminData extends Command
             }
 
             if (
-                !isset($action["device_code"]) ||
-                empty($action["device_code"])
+                !isset($action["target"]["device_code"]) ||
+                empty($action["target"]["device_code"])
             ) {
                 Log::warning(
                     "sync:admin → kode perangkat tidak di set pada folder: {$dir}",
@@ -65,7 +74,7 @@ class SyncAdminData extends Command
 
                 DB::unprepared($sql);
                 $action["status"] = "COMPLETED";
-                $action["respond_at"] = now()->format("Y-m-d H:i:s");
+                $action["time"]["completed_at"] = now()->format("Y-m-d H:i:s");
                 $action["error_message"] = null;
 
                 file_put_contents(
@@ -79,6 +88,7 @@ class SyncAdminData extends Command
             } catch (\Throwable $e) {
                 // Jika gagal eksekusi SQL → FAILED (di sisi admin)
                 $action["status"] = "FAILED";
+                $action["time"]["failed_at"] = now()->format("Y-m-d H:i:s");
                 $action["error_message"] = $e->getMessage();
 
                 file_put_contents(
