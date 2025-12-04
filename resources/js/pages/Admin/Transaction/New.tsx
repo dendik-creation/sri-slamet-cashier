@@ -48,7 +48,7 @@ const AdminTransactionNew = ({
     } = useForm({
         is_new_customer: false,
         trx: {
-            invoice_code: "BM-02.",
+            invoice_code: app_setting.initial_invoice_code,
             customer_id: "",
             customer_name: "",
             customer_phone: "",

@@ -29,6 +29,7 @@ const AdminAppSettingIndex = ({
         head_address: app_setting?.head_address ?? "",
         branch_address: app_setting?.branch_address ?? "",
         tax_applied: app_setting?.tax_applied?.toString() ?? "0",
+        initial_invoice_code: app_setting?.initial_invoice_code ?? "",
     });
 
     const handleChange = (
@@ -54,6 +55,13 @@ const AdminAppSettingIndex = ({
         }
         if (!data.branch_address || data.branch_address.trim() === "") {
             setError("branch_address", "Alamat cabang wajib diisi");
+            valid = false;
+        }
+        if (
+            !data.initial_invoice_code ||
+            data.initial_invoice_code.trim() === ""
+        ) {
+            setError("initial_invoice_code", "Kode awal transaksi wajib diisi");
             valid = false;
         }
         const taxVal = Number(data.tax_applied);
@@ -106,29 +114,56 @@ const AdminAppSettingIndex = ({
                             <ErrorInput error={errors.app_name} />
                         )}
                     </div>
-                    <div className="flex flex-col w-full">
-                        <label
-                            htmlFor="tax_applied"
-                            className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1"
-                        >
-                            Persentase Pajak (0 - 100)
-                        </label>
-                        <Input
-                            type="number"
-                            name="tax_applied"
-                            id="tax_applied"
-                            min={0}
-                            max={100}
-                            placeholder="Masukkan persentase pajak"
-                            value={data.tax_applied ?? ""}
-                            onChange={handleChange}
-                            className={cn(
-                                errors.tax_applied && "border-red-500",
+                    <div className="flex flex-col lg:flex-row items-center gap-2 w-full">
+                        <div className="flex flex-col w-full">
+                            <label
+                                htmlFor="tax_applied"
+                                className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1"
+                            >
+                                Persentase Pajak (0 - 100)
+                            </label>
+                            <Input
+                                type="number"
+                                name="tax_applied"
+                                id="tax_applied"
+                                min={0}
+                                max={100}
+                                placeholder="Masukkan persentase pajak"
+                                value={data.tax_applied ?? ""}
+                                onChange={handleChange}
+                                className={cn(
+                                    errors.tax_applied && "border-red-500",
+                                )}
+                            />
+                            {errors.tax_applied && (
+                                <ErrorInput error={errors.tax_applied} />
                             )}
-                        />
-                        {errors.tax_applied && (
-                            <ErrorInput error={errors.tax_applied} />
-                        )}
+                        </div>
+                        <div className="flex flex-col w-full">
+                            <label
+                                htmlFor="initial_invoice_code"
+                                className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1"
+                            >
+                                Kode Awal Transaksi
+                            </label>
+                            <Input
+                                type="text"
+                                name="initial_invoice_code"
+                                id="initial_invoice_code"
+                                placeholder="Masukkan kode awal transaksi"
+                                value={data.initial_invoice_code ?? ""}
+                                onChange={handleChange}
+                                className={cn(
+                                    errors.initial_invoice_code &&
+                                        "border-red-500",
+                                )}
+                            />
+                            {errors.initial_invoice_code && (
+                                <ErrorInput
+                                    error={errors.initial_invoice_code}
+                                />
+                            )}
+                        </div>
                     </div>
                     <div className="flex flex-col w-full">
                         <label

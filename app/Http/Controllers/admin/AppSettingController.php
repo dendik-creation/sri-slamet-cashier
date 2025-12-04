@@ -27,6 +27,7 @@ class AppSettingController extends Controller
             "head_address" => "required|string|max:500",
             "branch_address" => "required|string|max:500",
             "tax_applied" => "required|integer|min:0|max:100",
+            "initial_invoice_code" => "required|string|max:20",
         ]);
 
         $app_setting = AppSetting::getSetting();

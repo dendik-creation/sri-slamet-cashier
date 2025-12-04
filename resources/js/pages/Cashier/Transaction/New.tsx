@@ -48,7 +48,7 @@ const CashierTransactionNew = ({
     } = useForm({
         is_new_customer: false,
         trx: {
-            invoice_code: "BM-02.",
+            invoice_code: app_setting.initial_invoice_code,
             customer_id: "",
             customer_name: "",
             customer_phone: "",
@@ -92,7 +92,7 @@ const CashierTransactionNew = ({
     const handleChangeTrx = (key: keyof typeof data.trx, value: string) => {
         if (key === "customer_id") {
             const selectedCustomer = customers.find(
-                (c) => c.value.toString() === value
+                (c) => c.value.toString() === value,
             );
             if (selectedCustomer) {
                 setData("trx", {
@@ -125,7 +125,7 @@ const CashierTransactionNew = ({
     const handleChangeTrxItem = (
         index: number,
         key: keyof (typeof data.trx.trx_items)[0],
-        value: string | number | undefined
+        value: string | number | undefined,
     ) => {
         const updatedItems = [...data.trx.trx_items];
         updatedItems[index] = {
@@ -140,7 +140,7 @@ const CashierTransactionNew = ({
 
     const handleChangePayment = (
         key: keyof typeof data.trx.payment,
-        value: string | number | undefined
+        value: string | number | undefined,
     ) => {
         setData("trx", {
             ...data.trx,
@@ -189,7 +189,7 @@ const CashierTransactionNew = ({
 
     const handleRemoveTrxItem = (index: number) => {
         const updatedItems = data.trx.trx_items.filter(
-            (_item, idx) => idx !== index
+            (_item, idx) => idx !== index,
         );
         setData("trx", {
             ...data.trx,
@@ -302,7 +302,7 @@ const CashierTransactionNew = ({
                                         onChange={(e) =>
                                             handleChangeTrx(
                                                 "customer_name",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         placeholder="Masukkan nama pelanggan"
@@ -314,7 +314,7 @@ const CashierTransactionNew = ({
                                         onChange={(value) =>
                                             handleChangeTrx(
                                                 "customer_id",
-                                                value.toString()
+                                                value.toString(),
                                             )
                                         }
                                         placeholder="Pilih pelanggan"
@@ -343,7 +343,7 @@ const CashierTransactionNew = ({
                                     onChange={(e) =>
                                         handleChangeTrx(
                                             "customer_phone",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     disabled={!data.is_new_customer}
@@ -369,7 +369,7 @@ const CashierTransactionNew = ({
                                     onChange={(e) =>
                                         handleChangeTrx(
                                             "customer_address",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     disabled={!data.is_new_customer}
@@ -417,7 +417,7 @@ const CashierTransactionNew = ({
                                     onChange={(e) =>
                                         handleChangeTrx(
                                             "invoice_code",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                     placeholder="Masukkan Kode Transaksi"
@@ -437,7 +437,7 @@ const CashierTransactionNew = ({
                                     onChange={(value) =>
                                         handleChangeTrx(
                                             "order_at",
-                                            value as string
+                                            value as string,
                                         )
                                     }
                                     mode="single"
@@ -513,7 +513,7 @@ const CashierTransactionNew = ({
                                                                     index,
                                                                     "description",
                                                                     e.target
-                                                                        .value as string
+                                                                        .value as string,
                                                                 )
                                                             }
                                                             style={{
@@ -560,8 +560,8 @@ const CashierTransactionNew = ({
                                                                     "line_total",
                                                                     Number(
                                                                         e.target
-                                                                            .value
-                                                                    )
+                                                                            .value,
+                                                                    ),
                                                                 )
                                                             }
                                                         />
@@ -569,7 +569,7 @@ const CashierTransactionNew = ({
                                                             <Button
                                                                 onClick={() =>
                                                                     handleRemoveTrxItem(
-                                                                        index
+                                                                        index,
                                                                     )
                                                                 }
                                                                 variant={"red"}
@@ -582,7 +582,7 @@ const CashierTransactionNew = ({
                                                         )}
                                                     </div>
                                                 </div>
-                                            )
+                                            ),
                                         )}
                                 </div>
                             </div>
@@ -610,7 +610,7 @@ const CashierTransactionNew = ({
                                         onChange={(value) =>
                                             handleChangePayment(
                                                 "method",
-                                                value.toString()
+                                                value.toString(),
                                             )
                                         }
                                         options={[
@@ -651,7 +651,7 @@ const CashierTransactionNew = ({
                                                 "amount",
                                                 e.target.value
                                                     ? Number(e.target.value)
-                                                    : undefined
+                                                    : undefined,
                                             )
                                         }
                                         placeholder="Masukkan Nominal Pembayaran"
@@ -678,7 +678,7 @@ const CashierTransactionNew = ({
                                         </h6>
                                         <span>
                                             {floatToIdCurrency(
-                                                data.trx.subtotal
+                                                data.trx.subtotal,
                                             )}
                                         </span>
                                     </div>
@@ -691,7 +691,7 @@ const CashierTransactionNew = ({
                                             {floatToIdCurrency(
                                                 data.trx.subtotal *
                                                     (app_setting.tax_applied /
-                                                        100)
+                                                        100),
                                             )}
                                         </span>
                                     </div>
