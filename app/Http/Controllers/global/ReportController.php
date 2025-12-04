@@ -482,10 +482,10 @@ class ReportController extends Controller
         $start = Carbon::parse($filters["start_date"])->startOfDay();
         $end = Carbon::parse($filters["end_date"])->endOfDay();
 
-        $trxQuery = Transaction::query()->whereBetween("order_at", [
-            $start,
-            $end,
-        ]);
+        $trxQuery = Transaction::with("cashier", "customer")->whereBetween(
+            "order_at",
+            [$start, $end],
+        );
         $payQuery = Payment::query()->whereBetween("paid_at", [$start, $end]);
         $itemQuery = TransactionItem::query()->whereHas(
             "transaction",
@@ -556,6 +556,8 @@ class ReportController extends Controller
                         "is_paid" => (bool) $t->is_paid,
                         "order_at" => $t->order_at,
                         "completed_at" => $t->completed_at,
+                        "cashier" => $t->cashier,
+                        "customer" => $t->customer,
                     ],
                 ),
             ],

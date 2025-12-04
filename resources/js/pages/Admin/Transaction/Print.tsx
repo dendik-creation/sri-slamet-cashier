@@ -318,7 +318,7 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                     background: "#f8f8f8",
                                 }}
                             >
-                                Status Transaksi
+                                Tanggal Perbaikan
                             </th>
                             <th
                                 style={{
@@ -327,7 +327,7 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                     background: "#f8f8f8",
                                 }}
                             >
-                                Status Tagihan
+                                Status
                             </th>
                             <th
                                 style={{
@@ -338,15 +338,6 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                 }}
                             >
                                 Total
-                            </th>
-                            <th
-                                style={{
-                                    border: "1px solid #888",
-                                    padding: "4px 6px",
-                                    background: "#f8f8f8",
-                                }}
-                            >
-                                Tanggal Perbaikan
                             </th>
                         </tr>
                     </thead>
@@ -393,7 +384,13 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                             padding: 8,
                                         }}
                                     >
-                                        {humanTrxStatus(t.status)}
+                                        {ymdToIdDate(t.order_at, true)}
+                                        {t.completed_at
+                                            ? ` - ${ymdToIdDate(
+                                                  t.completed_at,
+                                                  true,
+                                              )}`
+                                            : "Belum Selesai"}
                                     </td>
                                     <td
                                         style={{
@@ -401,6 +398,7 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                             padding: 8,
                                         }}
                                     >
+                                        {humanTrxStatus(t.status)} {"|"}{" "}
                                         {t.is_paid ? "Lunas" : "Belum Lunas"}
                                     </td>
                                     <td
@@ -411,20 +409,6 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                         }}
                                     >
                                         {floatToIdCurrency(t.total)}
-                                    </td>
-                                    <td
-                                        style={{
-                                            border: "1px solid #ccc",
-                                            padding: 8,
-                                        }}
-                                    >
-                                        {ymdToIdDate(t.order_at, true)}
-                                        {t.completed_at
-                                            ? ` - ${ymdToIdDate(
-                                                  t.completed_at,
-                                                  true,
-                                              )}`
-                                            : ""}
                                     </td>
                                 </tr>
                             ))

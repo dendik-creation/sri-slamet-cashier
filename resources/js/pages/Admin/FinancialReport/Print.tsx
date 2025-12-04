@@ -183,22 +183,22 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                             #
                         </th>
                         <th className="p-2 text-gray-800 font-semibold border border-black">
-                            Invoice
+                            Kode Transaksi
                         </th>
                         <th className="p-2 text-gray-800 font-semibold border border-black">
-                            Status
+                            Pelanggan
+                        </th>
+                        <th className="p-2 text-gray-800 font-semibold border border-black">
+                            Kasir
                         </th>
                         <th className="p-2 text-gray-800 font-semibold border border-black">
                             Tanggal Perbaikan
                         </th>
                         <th className="p-2 text-gray-800 font-semibold border border-black">
-                            Status Tagihan
+                            Status
                         </th>
                         <th className="p-2 text-gray-800 font-semibold border border-black text-right">
                             Total
-                        </th>
-                        <th className="p-2 text-gray-800 font-semibold border border-black text-right">
-                            Sisa
                         </th>
                     </tr>
                 </thead>
@@ -216,7 +216,10 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                                     {t.invoice_code}
                                 </td>
                                 <td className="p-2 text-gray-900 border border-black">
-                                    {humanTrxStatus(t.status)}
+                                    {t.customer.name}
+                                </td>
+                                <td className="p-2 text-gray-900 border border-black">
+                                    {t.cashier.name}
                                 </td>
                                 <td className="p-2 text-gray-900 border border-black">
                                     {ymdToIdDate(t.order_at)} -{" "}
@@ -224,13 +227,11 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                                         "Belum Selesai"}
                                 </td>
                                 <td className="p-2 text-gray-900 border border-black">
+                                    {humanTrxStatus(t.status)} {"|"}{" "}
                                     {t.is_paid ? "Lunas" : "Belum Lunas"}
                                 </td>
                                 <td className="p-2 text-gray-900 border border-black text-right">
                                     {floatToIdCurrency(t.total)}
-                                </td>
-                                <td className="p-2 text-gray-900 border border-black text-right">
-                                    {floatToIdCurrency(t.is_paid ? 0 : t.total)}
                                 </td>
                             </tr>
                         ))

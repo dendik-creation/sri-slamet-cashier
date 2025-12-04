@@ -98,6 +98,8 @@ export type FinancialReportData = {
             is_paid: boolean;
             order_at: string;
             completed_at: string | null;
+            cashier: User;
+            customer: Customer;
         }>;
     };
 };
