@@ -80,7 +80,7 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
         window.addEventListener("afterprint", handleAfterPrint);
         const printTimeout = setTimeout(
             () => !isProcessingPrint && window.print(),
-            150
+            150,
         );
         return () => {
             clearTimeout(printTimeout);
@@ -103,7 +103,7 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
             }
             #print-area {
                 position: absolute !important;
-                left: 0; 
+                left: 0;
                 top: 0;
                 width: 100vw;
                 height: auto;
@@ -189,7 +189,7 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                     >
                                         Periode:{" "}
                                         {ymdToIdDate(
-                                            filters.start_date_in || ""
+                                            filters.start_date_in || "",
                                         )}{" "}
                                         -{" "}
                                         {ymdToIdDate(filters.end_date_in || "")}
@@ -346,7 +346,7 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                     background: "#f8f8f8",
                                 }}
                             >
-                                Waktu Perbaikan
+                                Tanggal Perbaikan
                             </th>
                         </tr>
                     </thead>
@@ -422,7 +422,7 @@ const AdminTransactionPrint: React.FC<AdminTransactionPrintProps> = ({
                                         {t.completed_at
                                             ? ` - ${ymdToIdDate(
                                                   t.completed_at,
-                                                  true
+                                                  true,
                                               )}`
                                             : ""}
                                     </td>

@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\AppSetting;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
@@ -47,57 +45,27 @@ class SyncDataController extends Controller
             $root_path . DIRECTORY_SEPARATOR . "*",
             GLOB_ONLYDIR,
         );
-
         $sync_folders = [];
-        foreach ($directories as $dir) {
-            $folder_name = basename($dir);
-            if (
-                !preg_match(
-                    '/^\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}$/',
-                    $folder_name,
-                )
-            ) {
-                continue;
+        foreach ($directories as $directory) {
+            $action_file = $directory . DIRECTORY_SEPARATOR . "action.json";
+            if (file_exists($action_file)) {
+                $action = json_decode(file_get_contents($action_file), true);
+                $action["current_record"] = null;
+                $records = $action["records"] ?? [];
+                if (is_array($records) && !empty($records)) {
+                    $steps = array_column($records, "step");
+                    $index = array_search(
+                        $action["current_step"],
+                        $steps,
+                        true,
+                    );
+                    if ($index !== false) {
+                        $action["current_record"] = $records[$index];
+                    }
+                }
+                $sync_folders[] = $action;
             }
-            $action_file = $dir . DIRECTORY_SEPARATOR . "action.json";
-            if (!file_exists($action_file)) {
-                continue;
-            }
-            $action = json_decode(file_get_contents($action_file), true);
-
-            // Meta Data
-            $pending_at = $action["time"]["pending_at"] ?? null;
-            $syncing_at = $action["time"]["syncing_at"] ?? null;
-            $completed_at = $action["time"]["completed_at"] ?? null;
-            $target_name = $action["target"]["name"] ?? null;
-            $device_code = $action["target"]["device_code"] ?? null;
-            $status = $action["status"] ?? null;
-            $error_message =
-                $status === "FAILED"
-                    ? $action["error_message"] ?? "Unknown Error"
-                    : null;
-
-            $sync_folders[] = [
-                "folder_name" => $folder_name,
-                "status" => $status,
-                "time" => [
-                    "pending_at" => $pending_at,
-                    "syncing_at" => $syncing_at,
-                    "completed_at" => $completed_at,
-                ],
-                "target" => [
-                    "name" => $target_name,
-                    "device_code" => $device_code,
-                ],
-                "error_message" => $error_message,
-            ];
         }
-
-        usort(
-            $sync_folders,
-            fn($a, $b) => strcmp($b["folder_name"], $a["folder_name"]),
-        );
-
         return Inertia::render("Admin/SyncData/Index", [
             "title" => "Sinkronisasi Data",
             "description" =>
@@ -119,13 +87,18 @@ class SyncDataController extends Controller
             $folder_name;
         $action_file = $directory_path . DIRECTORY_SEPARATOR . "action.json";
         $action = json_decode(file_get_contents($action_file), true);
-        return response()->json([
-            "status" => $action["status"],
-            "time" => $action["time"],
-            "target" => $action["target"],
-            "folder_name" => $action["folder_name"],
-            "error_message" => $action["error_message"],
-        ]);
+        $current_step = $action["current_step"] ?? 1;
+        $records = $action["records"] ?? [];
+        $latest_record = null;
+        if (is_array($records) && !empty($records)) {
+            $steps = array_column($records, "step");
+            $index = array_search($current_step, $steps, true);
+            if ($index !== false) {
+                $latest_record = $records[$index];
+            }
+        }
+        $action["current_record"] = $latest_record;
+        return response()->json($action);
     }
 
     public function sync(Request $request)
@@ -139,49 +112,110 @@ class SyncDataController extends Controller
             ],
         );
 
+        $location_target = $validated["location_target"];
         // Get folder path
         $root_path = rtrim(
             config("custom.syncthing.sync_path"),
             DIRECTORY_SEPARATOR,
         );
-        $folder_name = now()->format("Y_m_d_H_i_s");
+        $folder_name = strtolower($location_target);
         $full_path = $root_path . DIRECTORY_SEPARATOR . $folder_name;
 
-        // Create folder
+        // Create folder north or south if not exists
         if (!file_exists($full_path)) {
             mkdir($full_path, 0777, true);
         }
 
-        $location_target = $validated["location_target"];
+        $current_step = 1;
+        $action_file = $full_path . DIRECTORY_SEPARATOR . "action.json";
 
-        // action.json
-        $action = [
-            "time" => [
-                "pending_at" => now()->format("Y-m-d H:i:s"),
-                "syncing_at" => null,
-                "completed_at" => null,
-                "failed_at" => null,
-            ],
-            "target" => [
+        if (file_exists($action_file)) {
+            // Read existing action.json
+            $existing_action = json_decode(
+                file_get_contents($action_file),
+                true,
+            );
+
+            // Determine new current_step
+            $current_step =
+                isset($existing_action["current_step"]) &&
+                is_numeric($existing_action["current_step"])
+                    ? (int) $existing_action["current_step"] + 1
+                    : 1;
+
+            // Ensure records is an array; initialize if missing or invalid
+            $records = [];
+            if (
+                isset($existing_action["records"]) &&
+                is_array($existing_action["records"])
+            ) {
+                $records = $existing_action["records"];
+            }
+
+            // Push new record
+            $records[] = [
+                "step" => $current_step,
+                "time" => [
+                    "pending_at" => now()->format("Y-m-d H:i:s"),
+                    "syncing_at" => null,
+                    "completed_at" => null,
+                    "failed_at" => null,
+                ],
+                "status" => "PENDING",
+                "error_message" => null,
+            ];
+
+            // Update action structure
+            $action = $existing_action;
+            $action["folder_name"] = $folder_name;
+            $action["current_step"] = $current_step;
+            $action["target"] = [
                 "name" => $this->humanizeLocationTarget($location_target),
                 "location" => $location_target,
                 "device_code" => $this->getDeviceCodeByLocationTarget(
                     $location_target,
                 ),
-            ],
-            "folder_name" => $folder_name,
-            "status" => "PENDING",
-            "error_message" => null,
-        ];
+            ];
+            $action["records"] = $records;
+        } else {
+            // Create new action.json
+            $current_step = 1;
+            $action = [
+                "folder_name" => $folder_name,
+                "current_step" => $current_step,
+                "target" => [
+                    "name" => $this->humanizeLocationTarget($location_target),
+                    "location" => $location_target,
+                    "device_code" => $this->getDeviceCodeByLocationTarget(
+                        $location_target,
+                    ),
+                ],
+                "records" => [
+                    [
+                        "step" => $current_step,
+                        "time" => [
+                            "pending_at" => now()->format("Y-m-d H:i:s"),
+                            "syncing_at" => null,
+                            "completed_at" => null,
+                            "failed_at" => null,
+                        ],
+                        "status" => "PENDING",
+                        "error_message" => null,
+                    ],
+                ],
+            ];
+        }
 
-        // save action.json
-        $action_file = $full_path . DIRECTORY_SEPARATOR . "action.json";
+        // Write to action.json
         file_put_contents(
             $action_file,
             json_encode($action, JSON_PRETTY_PRINT),
         );
 
-        Session::flash("success", "Permintaan sinkronisasi dikirim ke kasir");
+        Session::flash(
+            "success",
+            "Permintaan sinkronisasi data berhasil dikirim.",
+        );
         return Inertia::location(route("admin.sync-data.index"));
     }
 }

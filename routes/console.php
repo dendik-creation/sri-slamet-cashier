@@ -8,7 +8,13 @@ Artisan::command("inspire", function () {
     $this->comment(Inspiring::quote());
 })->purpose("Display an inspiring quote");
 
-Schedule::command("app:sync-admin")->everyThirtySeconds()->runInBackground();
-// Schedule::command("app:sync-cashier")
-//     ->everyThirtySeconds()
-//     ->withoutOverlapping();
+if (config("custom.syncthing.is_admin")) {
+    Schedule::command("app:sync-admin")
+        ->everyThirtySeconds()
+        ->runInBackground();
+}
+if (config("custom.syncthing.is_cashier")) {
+    Schedule::command("app:sync-cashier")
+        ->everyThirtySeconds()
+        ->withoutOverlapping();
+}

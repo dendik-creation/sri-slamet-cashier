@@ -45,68 +45,76 @@ class SyncCashierData extends Command
             DIRECTORY_SEPARATOR,
         );
         if (!$this->isRootPathExist($root)) {
-            $this->error("Path root sync tidak ditemukan");
+            Log::error("Path root sync tidak ditemukan");
             return Command::FAILURE;
         }
 
-        $folders = glob($root . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
-
-        foreach ($folders as $dir) {
-            $actionFile = $dir . DIRECTORY_SEPARATOR . "action.json";
-            if (!file_exists($actionFile)) {
-                continue;
-            }
-
-            $action = json_decode(file_get_contents($actionFile), true);
-            $device_code = $this->getDeviceCodeByLocationTarget(
-                $action["target"]["location"],
+        $expected_location = strtolower(
+            config("custom.syncthing.device_location"),
+        );
+        $folder = $root . DIRECTORY_SEPARATOR . $expected_location;
+        $expected_action_path = $folder . DIRECTORY_SEPARATOR . "action.json";
+        // if action.json exists
+        if (!file_exists($expected_action_path)) {
+            Log::error("Tidak ada action.json di folder: {$expected_location}");
+            return Command::FAILURE;
+        }
+        $action = json_decode(file_get_contents($expected_action_path), true);
+        // validate location target
+        if ($action["target"]["location"] != strtoupper($expected_location)) {
+            Log::error(
+                "Lokasi target pada action.json tidak sesuai dengan folder sinkronisasi.",
             );
-
-            if (
-                ($action["status"] ?? null) !== "PENDING" ||
-                ($action["target"]["device_code"] ?? null) !== $device_code
-            ) {
-                continue;
-            }
-
-            try {
-                // 1. Generate SQL DML UPSERT (SQLite)
-                $sql = $this->generateSqlDml();
-
-                // 2. Simpan ke file kasir_dml.sql di folder sinkronisasi
-                $sqlFile = $dir . DIRECTORY_SEPARATOR . "kasir_dml.sql";
-                file_put_contents($sqlFile, $sql);
-
-                // 3. Update status → SYNCING (berarti: "file DML siap diambil admin")
-                $action["status"] = "SYNCING";
-                $action["time"]["syncing_at"] = now()->format("Y-m-d H:i:s");
-                $action["error_message"] = null;
-
-                file_put_contents(
-                    $actionFile,
-                    json_encode($action, JSON_PRETTY_PRINT),
-                );
-
-                Log::info(
-                    "sync:kasir → SQL DML berhasil dibuat di folder: {$dir}",
-                );
-            } catch (\Throwable $e) {
-                // Jika gagal membuat SQL → FAILED
-                $action["status"] = "FAILED";
-                $action["time"]["failed_at"] = now()->format("Y-m-d H:i:s");
-                $action["error_message"] = $e->getMessage();
-
-                file_put_contents(
-                    $actionFile,
-                    json_encode($action, JSON_PRETTY_PRINT),
-                );
-
-                Log::error(
-                    "sync:kasir → Gagal membuat DML di folder {$dir}: {$e->getMessage()}",
-                );
+            return Command::FAILURE;
+        }
+        // validate device code
+        $expected_device_code = $this->getDeviceCodeByLocationTarget(
+            $expected_location,
+        );
+        if ($action["target"]["device_code"] != $expected_device_code) {
+            Log::error(
+                "Device code pada action.json tidak sesuai dengan konfigurasi.",
+            );
+            return Command::FAILURE;
+        }
+        $current_step = $action["current_step"] ?? 1;
+        $action_records = $action["records"];
+        // Find current record
+        $current_record = null;
+        if (is_array($action_records) && !empty($action_records)) {
+            $steps = array_column($action_records, "step");
+            $index = array_search($current_step, $steps, true);
+            if ($index !== false) {
+                $current_record = $action_records[$index];
             }
         }
-
+        // validate current record status
+        if ($current_record["status"] != "PENDING") {
+            Log::error("Status sinkronisasi saat ini bukan PENDING.");
+            return Command::FAILURE;
+        }
+        $sql_file_path = $folder . DIRECTORY_SEPARATOR . "data.sql";
+        // Remove sql_dml.sql if exists
+        if (file_exists($sql_file_path)) {
+            unlink($sql_file_path);
+        }
+        // Generate SQL DML
+        $sql_dml = $this->generateSqlDml();
+        // Write to sql_dml.sql
+        file_put_contents($sql_file_path, $sql_dml);
+        // Update action.json record status to SYNCING
+        foreach ($action["records"] as &$record) {
+            if ($record["step"] === $current_step) {
+                $record["status"] = "SYNCING";
+                $record["time"]["syncing_at"] = date("Y-m-d H:i:s");
+                break;
+            }
+        }
+        // Save updated action.json
+        file_put_contents(
+            $expected_action_path,
+            json_encode($action, JSON_PRETTY_PRINT),
+        );
         return Command::SUCCESS;
     }
 

@@ -229,7 +229,7 @@ class TransactionController extends Controller
         }
 
         Session::flash("success", "Transaksi berhasil disimpan");
-        return Inertia::location(route("admin.transactions.show"));
+        return Inertia::location(route("admin.transactions.index"));
     }
 
     public function edit($id)

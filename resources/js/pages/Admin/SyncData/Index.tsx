@@ -1,6 +1,5 @@
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle, PageTitleProps } from "@/Partials/PageTitle";
-import { SelectOption } from "@/types/global";
 import AdminModalSync from "./ModalSync";
 import {
     Table,
@@ -15,8 +14,10 @@ import { ymdToIdDate } from "@/components/helper/helper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+    BadgeInfo,
     CloudAlert,
     CloudCheck,
+    FolderClock,
     Hourglass,
     LucideProps,
     RefreshCcwDot,
@@ -32,20 +33,35 @@ import axios from "axios";
 
 type AdminSyncDataIndexProps = PageTitleProps & {
     sync_folders: {
-        time: {
-            pending_at: string;
-            syncing_at: string | null;
-            completed_at: string | null;
-            failed_at: string | null;
-        };
+        folder_name: string;
+        current_step: string;
         target: {
             name: string;
-            device_code: string;
             location: "NORTH" | "SOUTH";
+            device_code: string;
         };
-        folder_name: string;
-        status: string;
-        error_message: string | null;
+        current_record: {
+            step: string;
+            time: {
+                pending_at: string;
+                syncing_at: string | null;
+                completed_at: string | null;
+                failed_at: string | null;
+            };
+            status: "PENDING" | "SYNCING" | "COMPLETED" | "FAILED";
+            error_message: string | null;
+        };
+        records: {
+            step: string;
+            time: {
+                pending_at: string;
+                syncing_at: string | null;
+                completed_at: string | null;
+                failed_at: string | null;
+            };
+            status: "PENDING" | "SYNCING" | "COMPLETED" | "FAILED";
+            error_message: string | null;
+        }[];
     }[];
 };
 
@@ -64,8 +80,8 @@ const CreateStatusBadge = ({
     };
 
     const labelByStatus: { [key: string]: string } = {
-        PENDING: "Menunggu",
-        SYNCING: "Proses Berlangsung",
+        PENDING: "Sedang disiapkan",
+        SYNCING: "Sinkronisasi berlangsung",
         COMPLETED: "Berhasil",
         FAILED: "Gagal",
     };
@@ -115,7 +131,6 @@ const AdminSyncDataIndex = ({
         [] as { folder_name: string; is_syncing: boolean }[],
     );
     const refreshStatus = async (folder_name: string) => {
-        // Set or update inSyncing state by folder_name
         setInSyncing((prev) => {
             const existing = prev.find(
                 (item) => item.folder_name === folder_name,
@@ -131,27 +146,26 @@ const AdminSyncDataIndex = ({
             }
         });
 
-        // Call API
         try {
             const response = await axios.get("/admin/sync-data/status", {
                 params: { folder_name },
             });
-            // Update syncFolders state
-            setSyncFolders((prev) => {
-                return prev.map((item) =>
+            setSyncFolders((prev) =>
+                prev.map((item) =>
                     item.folder_name === folder_name
                         ? {
                               ...item,
-                              status: response.data.status,
-                              error_message: response.data.error_message,
-                              time: response.data.time,
-                              target: response.data.target,
-                              folder_name: response.data.folder_name,
+                              current_step:
+                                  response.data.current_step ??
+                                  item.current_step,
+                              current_record:
+                                  response.data.current_record ??
+                                  item.current_record,
+                              records: response.data.records ?? item.records,
                           }
                         : item,
-                );
-            });
-            // Remove from inSyncing state
+                ),
+            );
             setInSyncing((prev) =>
                 prev.filter((item) => item.folder_name !== folder_name),
             );
@@ -159,23 +173,18 @@ const AdminSyncDataIndex = ({
             console.error(error);
         }
     };
-    const findSyncingFolder = (
-        folder_name: string,
-    ): { folder_name: string; is_syncing: boolean } => {
-        return inSyncing.find((item) => item.folder_name === folder_name) as {
-            folder_name: string;
-            is_syncing: boolean;
-        };
-    };
 
     useEffect(() => {
         const interval = setInterval(() => {
             syncFolders.forEach((item) => {
-                if (item.status != "COMPLETED" && item.status != "FAILED") {
+                if (
+                    item.current_record.status != "COMPLETED" &&
+                    item.current_record.status != "FAILED"
+                ) {
                     refreshStatus(item.folder_name);
                 }
             });
-        }, 10000);
+        }, 15000);
 
         return () => clearInterval(interval);
     }, [syncFolders]);
@@ -217,16 +226,22 @@ const AdminSyncDataIndex = ({
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
-                                            <span>{item.target.name}</span>
+                                            <span className="font-semibold">
+                                                {item.target.name}
+                                            </span>
+                                            <span className="text-xs">
+                                                Sinkronisasi ke{"-"}
+                                                {item.current_step}
+                                            </span>
                                             <pre className="text-xs text-stone-500">
-                                                {item.target.device_code}
+                                                {item.target.device_code || "-"}
                                             </pre>
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <CreateStatusBadge
                                             status={
-                                                item.status as
+                                                item.current_record.status as
                                                     | "PENDING"
                                                     | "SYNCING"
                                                     | "COMPLETED"
@@ -243,7 +258,8 @@ const AdminSyncDataIndex = ({
                                                 />
                                                 <span>
                                                     {ymdToIdDate(
-                                                        item.time.pending_at,
+                                                        item.current_record.time
+                                                            .pending_at,
                                                         true,
                                                     ) || "-"}
                                                 </span>
@@ -255,7 +271,8 @@ const AdminSyncDataIndex = ({
                                                 />
                                                 <span>
                                                     {ymdToIdDate(
-                                                        item.time.syncing_at,
+                                                        item.current_record.time
+                                                            .syncing_at,
                                                         true,
                                                     ) || "-"}
                                                 </span>
@@ -267,12 +284,14 @@ const AdminSyncDataIndex = ({
                                                 />
                                                 <span>
                                                     {ymdToIdDate(
-                                                        item.time.completed_at,
+                                                        item.current_record.time
+                                                            .completed_at,
                                                         true,
                                                     ) || "-"}
                                                 </span>
                                             </div>
-                                            {item.status != "COMPLETED" && (
+                                            {item.current_record.status !=
+                                                "COMPLETED" && (
                                                 <div className="flex items-center gap-1 text-sm">
                                                     <CloudAlert
                                                         className="text-red-600"
@@ -280,7 +299,8 @@ const AdminSyncDataIndex = ({
                                                     />
                                                     <span>
                                                         {ymdToIdDate(
-                                                            item.time.failed_at,
+                                                            item.current_record
+                                                                .time.failed_at,
                                                             true,
                                                         ) || "-"}
                                                     </span>
@@ -289,59 +309,35 @@ const AdminSyncDataIndex = ({
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        {item.error_message
-                                            ? item.error_message
+                                        {item.current_record.error_message
+                                            ? item.current_record.error_message
                                             : "-"}
                                     </TableCell>
                                     <TableCell>
-                                        {item.status == "COMPLETED" ||
-                                        item.status == "FAILED" ? (
-                                            <span className="text-sm text-stone-500">
-                                                Tidak ada aksi
-                                            </span>
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                {(() => {
-                                                    const isSyncing =
-                                                        !!findSyncingFolder(
-                                                            item.folder_name,
-                                                        )?.is_syncing;
-                                                    const handleRefresh = () =>
-                                                        refreshStatus(
-                                                            item.folder_name,
-                                                        );
-                                                    return (
-                                                        <Button
-                                                            variant="outline"
-                                                            onClick={
-                                                                handleRefresh
-                                                            }
-                                                            disabled={isSyncing}
-                                                        >
-                                                            <RefreshCcwDot
-                                                                className={cn(
-                                                                    isSyncing &&
-                                                                        "animate-spin",
-                                                                )}
-                                                            />
-                                                            <span>Refresh</span>
-                                                        </Button>
-                                                    );
-                                                })()}
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="outline">
+                                                <FolderClock />
+                                                <span>Riwayat</span>
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
-                        {sync_folders.length == 0 && (
+                        {syncFolders.length == 0 && (
                             <EmptyTable
-                                colSpan={7}
+                                colSpan={6}
                                 message="Sinkronisasi tidak ada"
                             />
                         )}
                     </TableBody>
                 </Table>
             </div>
+            {syncFolders.length > 0 && (
+                <div className="flex mt-4 items-center text-sm gap-2">
+                    <BadgeInfo size={20} className="text-blue-500" />
+                    <span>Data diperbarui setiap 15 detik secara otomatis</span>
+                </div>
+            )}
         </AppLayout>
     );
 };

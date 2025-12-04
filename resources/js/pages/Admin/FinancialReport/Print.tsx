@@ -189,7 +189,7 @@ const AdminFinancialReportPrint: React.FC<AdminFinancialReportPrintProps> = ({
                             Status
                         </th>
                         <th className="p-2 text-gray-800 font-semibold border border-black">
-                            Waktu Perbaikan
+                            Tanggal Perbaikan
                         </th>
                         <th className="p-2 text-gray-800 font-semibold border border-black">
                             Status Tagihan
