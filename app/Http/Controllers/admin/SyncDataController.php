@@ -79,7 +79,6 @@ class SyncDataController extends Controller
         $validated = $request->validate([
             "folder_name" => "required",
         ]);
-        sleep(2);
         $folder_name = $validated["folder_name"];
         $directory_path =
             config("custom.syncthing.sync_path") .

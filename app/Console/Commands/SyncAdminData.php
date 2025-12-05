@@ -91,7 +91,7 @@ class SyncAdminData extends Command
                 }
                 // Update action.json status to COMPLETED
                 $action["records"][$index]["status"] = "COMPLETED";
-                $action["records"][$index]["completed_at"] = date(
+                $action["records"][$index]["time"]["completed_at"] = date(
                     "Y-m-d H:i:s",
                 );
                 // Save action.json
@@ -106,17 +106,19 @@ class SyncAdminData extends Command
                 // update action.json status to FAILED
                 if (isset($action) && isset($index)) {
                     $action["records"][$index]["status"] = "FAILED";
-                    $action["records"][$index]["failed_at"] = date(
+                    $action["records"][$index]["time"]["failed_at"] = date(
                         "Y-m-d H:i:s",
                     );
                     $action["records"][$index][
                         "error_message"
                     ] = $e->getMessage();
-                    // Save action.json
-                    file_put_contents(
-                        $expected_action_path,
-                        json_encode($action, JSON_PRETTY_PRINT),
-                    );
+                    // Save action.json if exists
+                    if (file_exists($expected_action_path)) {
+                        file_put_contents(
+                            $expected_action_path,
+                            json_encode($action, JSON_PRETTY_PRINT),
+                        );
+                    }
                 }
                 continue;
             }

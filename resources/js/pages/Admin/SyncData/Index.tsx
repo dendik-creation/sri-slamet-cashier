@@ -15,12 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
     BadgeInfo,
+    CircleX,
     CloudAlert,
     CloudCheck,
     FolderClock,
     Hourglass,
     LucideProps,
     RefreshCcwDot,
+    X,
 } from "lucide-react";
 import {
     ForwardRefExoticComponent,
@@ -30,6 +32,16 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import {
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+    DialogTitle,
+    DialogDescription,
+    DialogClose,
+    DialogFooter,
+    DialogHeader,
+} from "@/components/ui/dialog";
 
 type AdminSyncDataIndexProps = PageTitleProps & {
     sync_folders: {
@@ -121,31 +133,72 @@ const CreateStatusBadge = ({
     );
 };
 
+const ShowErrorDetailModal = ({
+    folder_name,
+    sync_step,
+    error,
+    isOpen,
+    onOpenChange,
+}: {
+    folder_name: string;
+    sync_step: string;
+    error: string;
+    isOpen: boolean;
+    onOpenChange?: (open: boolean) => void;
+}) => {
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Sinkronisasi Error</DialogTitle>
+                    <DialogDescription className="mb-4">
+                        Detail error yang ditampilkan untuk langkah sinkronisasi
+                        yang dipilih
+                    </DialogDescription>
+                    <div className="flex flex-col">
+                        <span className="font-bold text-sm text-slate-700">
+                            Sinkronisasi{" "}
+                            {folder_name == "north"
+                                ? "Bengkel Utara"
+                                : "Bengkel Selatan"}{" "}
+                            ke-{sync_step}
+                        </span>
+                        <span>{error}</span>
+                    </div>
+                </DialogHeader>
+                <DialogFooter className="mt-9">
+                    <DialogClose asChild>
+                        <Button
+                            variant="red"
+                            className="flex items-center gap-2"
+                        >
+                            <CircleX /> Tutup
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 const AdminSyncDataIndex = ({
     title,
     description,
     sync_folders,
 }: AdminSyncDataIndexProps) => {
     const [syncFolders, setSyncFolders] = useState(sync_folders);
-    const [inSyncing, setInSyncing] = useState(
-        [] as { folder_name: string; is_syncing: boolean }[],
-    );
+    const [syncHistory, setSyncHistory] = useState({
+        visible: false as boolean,
+        folder_name: "" as string,
+        records: [] as AdminSyncDataIndexProps["sync_folders"][0]["records"],
+    });
+    const [errorModal, setErrorModal] = useState({
+        visible: false,
+        folder_name: "",
+        sync_step: "",
+        error: "",
+    });
     const refreshStatus = async (folder_name: string) => {
-        setInSyncing((prev) => {
-            const existing = prev.find(
-                (item) => item.folder_name === folder_name,
-            );
-            if (existing) {
-                return prev.map((item) =>
-                    item.folder_name === folder_name
-                        ? { ...item, is_syncing: true }
-                        : item,
-                );
-            } else {
-                return [...prev, { folder_name, is_syncing: true }];
-            }
-        });
-
         try {
             const response = await axios.get("/admin/sync-data/status", {
                 params: { folder_name },
@@ -166,9 +219,6 @@ const AdminSyncDataIndex = ({
                         : item,
                 ),
             );
-            setInSyncing((prev) =>
-                prev.filter((item) => item.folder_name !== folder_name),
-            );
         } catch (error) {
             console.error(error);
         }
@@ -188,6 +238,154 @@ const AdminSyncDataIndex = ({
 
         return () => clearInterval(interval);
     }, [syncFolders]);
+
+    const handleHistoryMode = (
+        folder_name: string,
+        mode: "VISIBLE" | "CLOSE",
+    ) => {
+        setSyncHistory({
+            visible: mode === "VISIBLE" ? true : false,
+            folder_name: mode === "VISIBLE" ? folder_name : "",
+            records:
+                mode === "VISIBLE"
+                    ? syncFolders
+                          .find((item) => item.folder_name === folder_name)
+                          ?.records?.sort(
+                              (a, b) => Number(b.step) - Number(a.step),
+                          ) || []
+                    : [],
+        });
+    };
+    const handleErrorDetailModal = (
+        folder_name: string,
+        sync_step: string,
+        error: string,
+        isOpen: boolean,
+    ) => {
+        setErrorModal({
+            visible: isOpen,
+            folder_name: folder_name,
+            sync_step: sync_step,
+            error: error,
+        });
+    };
+    const CreateSyncHistoryRowTable = ({
+        folder_name,
+        records,
+        visible,
+    }: {
+        folder_name: string;
+        records: AdminSyncDataIndexProps["sync_folders"][0]["records"];
+        visible: boolean;
+    }) => {
+        return visible ? (
+            <TableRow key={folder_name}>
+                <TableCell colSpan={6}>
+                    <div className="rounded-md border mt-2">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="bg-stone-100 font-semibold">
+                                        Sinkron ke-
+                                    </TableHead>
+                                    <TableHead className="bg-stone-100 font-semibold">
+                                        Status
+                                    </TableHead>
+                                    <TableHead className="bg-stone-100 font-semibold">
+                                        Menunggu pada
+                                    </TableHead>
+                                    <TableHead className="bg-stone-100 font-semibold">
+                                        Berlangsung pada
+                                    </TableHead>
+                                    <TableHead className="bg-stone-100 font-semibold">
+                                        Berhasil pada
+                                    </TableHead>
+                                    <TableHead className="bg-stone-100 font-semibold">
+                                        Gagal pada
+                                    </TableHead>
+                                    <TableHead className="bg-stone-100 font-semibold">
+                                        Error
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {records.length > 0 ? (
+                                    records.map((rec, idx) => (
+                                        <TableRow
+                                            key={`${folder_name}-${idx}-${rec.step}`}
+                                        >
+                                            <TableCell>{rec.step}</TableCell>
+                                            <TableCell>
+                                                <CreateStatusBadge
+                                                    status={
+                                                        rec.status as
+                                                            | "PENDING"
+                                                            | "SYNCING"
+                                                            | "COMPLETED"
+                                                            | "FAILED"
+                                                    }
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                {ymdToIdDate(
+                                                    rec.time.pending_at,
+                                                    true,
+                                                ) || "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {ymdToIdDate(
+                                                    rec.time.syncing_at,
+                                                    true,
+                                                ) || "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {ymdToIdDate(
+                                                    rec.time.completed_at,
+                                                    true,
+                                                ) || "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {ymdToIdDate(
+                                                    rec.time.failed_at,
+                                                    true,
+                                                ) || "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {rec.error_message ? (
+                                                    <Button
+                                                        onClick={() =>
+                                                            handleErrorDetailModal(
+                                                                folder_name,
+                                                                rec.step,
+                                                                rec.error_message ||
+                                                                    "",
+                                                                true,
+                                                            )
+                                                        }
+                                                        variant={"red"}
+                                                        size={"icon"}
+                                                    >
+                                                        <CloudAlert />
+                                                    </Button>
+                                                ) : (
+                                                    "-"
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <EmptyTable
+                                        colSpan={7}
+                                        message="Riwayat sinkronisasi kosong"
+                                    />
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TableCell>
+            </TableRow>
+        ) : null;
+    };
     return (
         <AppLayout>
             <div className="flex justify-between items-center mb-3">
@@ -309,20 +507,66 @@ const AdminSyncDataIndex = ({
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        {item.current_record.error_message
-                                            ? item.current_record.error_message
-                                            : "-"}
+                                        {item.current_record.error_message ? (
+                                            <Button
+                                                onClick={() =>
+                                                    handleErrorDetailModal(
+                                                        item.folder_name,
+                                                        item.current_step,
+                                                        item.current_record
+                                                            .error_message ||
+                                                            "",
+                                                        true,
+                                                    )
+                                                }
+                                                variant={"red"}
+                                                size={"sm"}
+                                            >
+                                                <CloudAlert />
+                                                <span>Detail Error</span>
+                                            </Button>
+                                        ) : (
+                                            "-"
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
-                                            <Button variant="outline">
-                                                <FolderClock />
-                                                <span>Riwayat</span>
-                                            </Button>
+                                            {(() => {
+                                                const isOpen =
+                                                    syncHistory.visible &&
+                                                    syncHistory.folder_name ===
+                                                        item.folder_name;
+
+                                                return (
+                                                    <Button
+                                                        onClick={() =>
+                                                            handleHistoryMode(
+                                                                item.folder_name,
+                                                                isOpen
+                                                                    ? "CLOSE"
+                                                                    : "VISIBLE",
+                                                            )
+                                                        }
+                                                        variant="outline"
+                                                    >
+                                                        <FolderClock />
+                                                        <span>
+                                                            {isOpen
+                                                                ? "Tutup Riwayat"
+                                                                : "Buka Riwayat"}
+                                                        </span>
+                                                    </Button>
+                                                );
+                                            })()}
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
+                        <CreateSyncHistoryRowTable
+                            visible={syncHistory.visible}
+                            folder_name={syncHistory.folder_name}
+                            records={syncHistory.records}
+                        />
                         {syncFolders.length == 0 && (
                             <EmptyTable
                                 colSpan={6}
@@ -332,6 +576,20 @@ const AdminSyncDataIndex = ({
                     </TableBody>
                 </Table>
             </div>
+            <ShowErrorDetailModal
+                folder_name={errorModal.folder_name}
+                sync_step={errorModal.sync_step}
+                error={errorModal.error}
+                isOpen={errorModal.visible}
+                onOpenChange={(open) =>
+                    handleErrorDetailModal(
+                        errorModal.folder_name,
+                        errorModal.sync_step,
+                        errorModal.error,
+                        open,
+                    )
+                }
+            />
             {syncFolders.length > 0 && (
                 <div className="flex mt-4 items-center text-sm gap-2">
                     <BadgeInfo size={20} className="text-blue-500" />

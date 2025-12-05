@@ -9,12 +9,8 @@ Artisan::command("inspire", function () {
 })->purpose("Display an inspiring quote");
 
 if (config("custom.syncthing.is_admin")) {
-    Schedule::command("app:sync-admin")
-        ->everyThirtySeconds()
-        ->runInBackground();
+    Schedule::command("app:sync-admin")->everyMinute()->runInBackground();
 }
 if (config("custom.syncthing.is_cashier")) {
-    Schedule::command("app:sync-cashier")
-        ->everyThirtySeconds()
-        ->withoutOverlapping();
+    Schedule::command("app:sync-cashier")->everyMinute()->withoutOverlapping();
 }

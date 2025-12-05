@@ -40,119 +40,154 @@ class SyncCashierData extends Command
     }
     public function handle()
     {
-        $root = rtrim(
-            config("custom.syncthing.sync_path"),
-            DIRECTORY_SEPARATOR,
-        );
-        if (!$this->isRootPathExist($root)) {
-            Log::error("Path root sync tidak ditemukan");
-            return Command::FAILURE;
-        }
+        try {
+            $root = rtrim(
+                config("custom.syncthing.sync_path"),
+                DIRECTORY_SEPARATOR,
+            );
+            if (!$this->isRootPathExist($root)) {
+                Log::warning("Path root sync tidak ditemukan: {$root}");
+                return Command::SUCCESS;
+            }
 
-        $expected_location = strtolower(
-            config("custom.syncthing.device_location"),
-        );
-        $folder = $root . DIRECTORY_SEPARATOR . $expected_location;
-        $expected_action_path = $folder . DIRECTORY_SEPARATOR . "action.json";
-        // if action.json exists
-        if (!file_exists($expected_action_path)) {
-            Log::error("Tidak ada action.json di folder: {$expected_location}");
-            return Command::FAILURE;
-        }
-        $action = json_decode(file_get_contents($expected_action_path), true);
-        // validate location target
-        if ($action["target"]["location"] != strtoupper($expected_location)) {
-            Log::error(
-                "Lokasi target pada action.json tidak sesuai dengan folder sinkronisasi.",
+            $expected_location = strtolower(
+                config("custom.syncthing.device_location"),
             );
-            return Command::FAILURE;
-        }
-        // validate device code
-        $expected_device_code = $this->getDeviceCodeByLocationTarget(
-            $expected_location,
-        );
-        if ($action["target"]["device_code"] != $expected_device_code) {
-            Log::error(
-                "Device code pada action.json tidak sesuai dengan konfigurasi.",
+            $folder = $root . DIRECTORY_SEPARATOR . $expected_location;
+            $expected_action_path =
+                $folder . DIRECTORY_SEPARATOR . "action.json";
+
+            if (!file_exists($expected_action_path)) {
+                Log::info(
+                    "Tidak ada action.json di folder: {$expected_location}",
+                );
+                return Command::SUCCESS;
+            }
+
+            $action = json_decode(
+                file_get_contents($expected_action_path),
+                true,
             );
-            return Command::FAILURE;
-        }
-        $current_step = $action["current_step"] ?? 1;
-        $action_records = $action["records"];
-        // Find current record
-        $current_record = null;
-        if (is_array($action_records) && !empty($action_records)) {
-            $steps = array_column($action_records, "step");
-            $index = array_search($current_step, $steps, true);
-            if ($index !== false) {
-                $current_record = $action_records[$index];
+
+            if (!\is_array($action)) {
+                Log::error(
+                    "Format action.json tidak valid (bukan JSON object).",
+                );
+                return Command::SUCCESS;
             }
-        }
-        // validate current record status
-        if ($current_record["status"] != "PENDING") {
-            Log::error("Status sinkronisasi saat ini bukan PENDING.");
-            return Command::FAILURE;
-        }
-        $sql_file_path = $folder . DIRECTORY_SEPARATOR . "data.sql";
-        // Remove sql_dml.sql if exists
-        if (file_exists($sql_file_path)) {
-            unlink($sql_file_path);
-        }
-        // Generate SQL DML
-        $sql_dml = $this->generateSqlDml();
-        // Write to sql_dml.sql
-        file_put_contents($sql_file_path, $sql_dml);
-        // Update action.json record status to SYNCING
-        foreach ($action["records"] as &$record) {
-            if ($record["step"] === $current_step) {
-                $record["status"] = "SYNCING";
-                $record["time"]["syncing_at"] = date("Y-m-d H:i:s");
-                break;
+
+            $targetLocation = $action["target"]["location"] ?? null;
+            if ($targetLocation !== strtoupper($expected_location)) {
+                Log::error(
+                    "Lokasi target pada action.json tidak sesuai dengan folder sinkronisasi.",
+                );
+                return Command::SUCCESS;
             }
+
+            $expected_device_code = $this->getDeviceCodeByLocationTarget(
+                $expected_location,
+            );
+            $deviceCode = $action["target"]["device_code"] ?? null;
+            if ($deviceCode !== $expected_device_code) {
+                Log::error(
+                    "Device code pada action.json tidak sesuai dengan konfigurasi.",
+                );
+                return Command::SUCCESS;
+            }
+
+            $current_step = $action["current_step"] ?? 1;
+            $action_records = $action["records"] ?? [];
+
+            $current_record = null;
+            if (\is_array($action_records) && !empty($action_records)) {
+                $steps = array_column($action_records, "step");
+                $index = array_search($current_step, $steps, true);
+                if ($index !== false && isset($action_records[$index])) {
+                    $current_record = $action_records[$index];
+                }
+            }
+
+            if (
+                !$current_record ||
+                ($current_record["status"] ?? null) !== "PENDING"
+            ) {
+                Log::info(
+                    "Tidak ada record PENDING untuk step saat ini ({$current_step}).",
+                );
+                return Command::SUCCESS;
+            }
+
+            $sql_file_path = $folder . DIRECTORY_SEPARATOR . "data.sql";
+            if (file_exists($sql_file_path)) {
+                @unlink($sql_file_path);
+            }
+
+            $sql_dml = $this->generateSqlDml();
+            file_put_contents($sql_file_path, $sql_dml);
+
+            foreach ($action["records"] as &$record) {
+                if (($record["step"] ?? null) === $current_step) {
+                    $record["status"] = "SYNCING";
+                    $record["time"]["syncing_at"] = date("Y-m-d H:i:s");
+                    break;
+                }
+            }
+            unset($record);
+
+            file_put_contents(
+                $expected_action_path,
+                json_encode($action, JSON_PRETTY_PRINT),
+            );
+
+            return Command::SUCCESS;
+        } catch (\Throwable $e) {
+            Log::error($e->getMessage());
+            // Jangan gagal cron; tetap sukses agar scheduler tidak exit code 1
+            return Command::SUCCESS;
         }
-        // Save updated action.json
-        file_put_contents(
-            $expected_action_path,
-            json_encode($action, JSON_PRETTY_PRINT),
-        );
-        return Command::SUCCESS;
     }
 
     private function generateSqlDml(): string
     {
         $sql = [];
 
-        // 1) USERS
-        $users = DB::table("users")->get();
-
-        foreach ($users as $u) {
+        // =========================================================================
+        // 1) USERS (conflict = username → UPDATE)
+        // =========================================================================
+        foreach (DB::table("users")->get() as $u) {
             $sql[] = "
             INSERT INTO users (id, username, name, role, password, created_at, updated_at)
             VALUES ({$u->id}, '{$u->username}', '{$u->name}', '{$u->role}', '{$u->password}',
                     '{$u->created_at}', '{$u->updated_at}')
-            ON CONFLICT(username) DO NOTHING;
+            ON CONFLICT(username) DO UPDATE SET
+                name = excluded.name,
+                role = excluded.role,
+                password = excluded.password,
+                updated_at = excluded.updated_at;
             ";
         }
 
-        // 2) CUSTOMERS
-        $customers = DB::table("customers")->get();
-
-        foreach ($customers as $c) {
+        // =========================================================================
+        // 2) CUSTOMERS (conflict = phone → UPDATE)
+        // =========================================================================
+        foreach (DB::table("customers")->get() as $c) {
             $sql[] = "
             INSERT INTO customers (id, name, phone, address, created_at, updated_at)
             VALUES ({$c->id}, '{$c->name}', '{$c->phone}', '{$c->address}',
                     '{$c->created_at}', '{$c->updated_at}')
-            ON CONFLICT(phone) DO NOTHING;
+            ON CONFLICT(phone) DO UPDATE SET
+                name = excluded.name,
+                address = excluded.address,
+                updated_at = excluded.updated_at;
             ";
         }
 
-        // 3) TRANSACTIONS
-        $transactions = DB::table("transactions")->get();
+        // =========================================================================
+        // 3) TRANSACTIONS (conflict = invoice_code → UPDATE)
+        // =========================================================================
+        $exportedIds = [];
 
-        // agar items & payments tau transaksi mana yg ditulis
-        $exportedTransactionIds = [];
-
-        foreach ($transactions as $t) {
+        foreach (DB::table("transactions")->get() as $t) {
             $sql[] =
                 "
             INSERT INTO transactions
@@ -163,26 +198,33 @@ class SyncCashierData extends Command
                  " .
                 ($t->customer_id ?: "NULL") .
                 ",
-                '{$t->order_at}', '{$t->status}', {$t->subtotal}, {$t->tax_ppn},
+                 '{$t->order_at}', '{$t->status}', {$t->subtotal}, {$t->tax_ppn},
                  {$t->total}, {$t->is_paid},
                  " .
                 ($t->completed_at ? "'{$t->completed_at}'" : "NULL") .
                 ",
-                '{$t->created_at}', '{$t->updated_at}'
-                )
-            ON CONFLICT(invoice_code) DO NOTHING;
+                 '{$t->created_at}', '{$t->updated_at}')
+            ON CONFLICT(invoice_code) DO UPDATE SET
+                cashier_id = excluded.cashier_id,
+                customer_id = excluded.customer_id,
+                order_at   = excluded.order_at,
+                status     = excluded.status,
+                subtotal   = excluded.subtotal,
+                tax_ppn    = excluded.tax_ppn,
+                total      = excluded.total,
+                is_paid    = excluded.is_paid,
+                completed_at = excluded.completed_at,
+                updated_at = excluded.updated_at;
             ";
 
-            // simpan hanya transaksi yang berhasil di-export
-            $exportedTransactionIds[] = $t->id;
+            $exportedIds[] = $t->id;
         }
 
-        // 4) TRANSACTION ITEMS
-        $items = DB::table("transaction_items")->get();
-
-        foreach ($items as $i) {
-            // hanya kalau parent transaksi ikut diekspor
-            if (!in_array($i->transaction_id, $exportedTransactionIds)) {
+        // =========================================================================
+        // 4) TRANSACTION ITEMS  (conflict = PK id → UPDATE)
+        // =========================================================================
+        foreach (DB::table("transaction_items")->get() as $i) {
+            if (!in_array($i->transaction_id, $exportedIds)) {
                 continue;
             }
 
@@ -196,15 +238,22 @@ class SyncCashierData extends Command
                  '{$i->status}', " .
                 ($i->refund_reason ? "'{$i->refund_reason}'" : "NULL") .
                 ",
-                 '{$i->created_at}', '{$i->updated_at}');
+                 '{$i->created_at}', '{$i->updated_at}')
+            ON CONFLICT(id) DO UPDATE SET
+                transaction_id = excluded.transaction_id,
+                description = excluded.description,
+                line_total = excluded.line_total,
+                status = excluded.status,
+                refund_reason = excluded.refund_reason,
+                updated_at = excluded.updated_at;
             ";
         }
 
-        // 5) PAYMENTS
-        $payments = DB::table("payments")->get();
-
-        foreach ($payments as $p) {
-            if (!in_array($p->transaction_id, $exportedTransactionIds)) {
+        // =========================================================================
+        // 5) PAYMENTS  (conflict = PK id → UPDATE)
+        // =========================================================================
+        foreach (DB::table("payments")->get() as $p) {
+            if (!in_array($p->transaction_id, $exportedIds)) {
                 continue;
             }
 
@@ -214,11 +263,18 @@ class SyncCashierData extends Command
                 (id, transaction_id, recorded_by, method, amount, paid_at,
                  created_at, updated_at)
             VALUES
-                ({$p->id}, {$p->transaction_id}, {$p->recorded_by}, '{$p->method}', {$p->amount},
-                 " .
+                ({$p->id}, {$p->transaction_id}, {$p->recorded_by}, '{$p->method}',
+                 {$p->amount}, " .
                 ($p->paid_at ? "'{$p->paid_at}'" : "NULL") .
                 ",
-                '{$p->created_at}', '{$p->updated_at}');
+                 '{$p->created_at}', '{$p->updated_at}')
+            ON CONFLICT(id) DO UPDATE SET
+                transaction_id = excluded.transaction_id,
+                recorded_by    = excluded.recorded_by,
+                method         = excluded.method,
+                amount         = excluded.amount,
+                paid_at        = excluded.paid_at,
+                updated_at     = excluded.updated_at;
             ";
         }
 

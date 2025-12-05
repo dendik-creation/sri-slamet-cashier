@@ -25,16 +25,16 @@ class UserSeeder extends Seeder
         ];
         $cashiers = [
             [
-                "username" => "kasir_1",
-                "name" => "Kasir Utara",
+                "username" => "kasir1",
+                "name" => "Kasir Bengkel Utara",
                 "password" => Hash::make("12345"),
                 "role" => "CASHIER",
                 "created_at" => $now,
                 "updated_at" => $now,
             ],
             [
-                "username" => "kasir_2",
-                "name" => "Kasir Selatan",
+                "username" => "kasir2",
+                "name" => "Kasir Bengkel Selatan",
                 "password" => Hash::make("12345"),
                 "role" => "CASHIER",
                 "created_at" => $now,
