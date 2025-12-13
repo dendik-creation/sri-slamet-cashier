@@ -46,7 +46,9 @@ class SyncCashierData extends Command
                 DIRECTORY_SEPARATOR,
             );
             if (!$this->isRootPathExist($root)) {
-                Log::warning("Path root sync tidak ditemukan: {$root}");
+                Log::info(
+                    "sync:cashier → Path root sync tidak ditemukan: {$root}",
+                );
                 return Command::SUCCESS;
             }
 
@@ -59,7 +61,7 @@ class SyncCashierData extends Command
 
             if (!file_exists($expected_action_path)) {
                 Log::info(
-                    "Tidak ada action.json di folder: {$expected_location}",
+                    "sync:cashier → Tidak ada action.json di folder: {$expected_location}",
                 );
                 return Command::SUCCESS;
             }
@@ -71,7 +73,7 @@ class SyncCashierData extends Command
 
             if (!\is_array($action)) {
                 Log::error(
-                    "Format action.json tidak valid (bukan JSON object).",
+                    "sync:cashier → Format action.json tidak valid (bukan JSON object).",
                 );
                 return Command::SUCCESS;
             }
@@ -79,7 +81,7 @@ class SyncCashierData extends Command
             $targetLocation = $action["target"]["location"] ?? null;
             if ($targetLocation !== strtoupper($expected_location)) {
                 Log::error(
-                    "Lokasi target pada action.json tidak sesuai dengan folder sinkronisasi.",
+                    "sync:cashier → Lokasi target pada action.json tidak sesuai dengan folder sinkronisasi.",
                 );
                 return Command::SUCCESS;
             }
@@ -90,7 +92,7 @@ class SyncCashierData extends Command
             $deviceCode = $action["target"]["device_code"] ?? null;
             if ($deviceCode !== $expected_device_code) {
                 Log::error(
-                    "Device code pada action.json tidak sesuai dengan konfigurasi.",
+                    "sync:cashier → Device code pada action.json tidak sesuai dengan konfigurasi.",
                 );
                 return Command::SUCCESS;
             }
@@ -112,7 +114,7 @@ class SyncCashierData extends Command
                 ($current_record["status"] ?? null) !== "PENDING"
             ) {
                 Log::info(
-                    "Tidak ada record PENDING untuk step saat ini ({$current_step}).",
+                    "sync:cashier → Tidak ada record PENDING untuk step saat ini ({$current_step}).",
                 );
                 return Command::SUCCESS;
             }
@@ -168,7 +170,7 @@ class SyncCashierData extends Command
         }
 
         // =========================================================================
-        // 2) CUSTOMERS (conflict = phone → UPDATE)
+        // 2) CUSTOMERS (conflict = id → UPDATE to avoid PK collision)
         // =========================================================================
         foreach (DB::table("customers")->get() as $c) {
             $sql[] = "
@@ -177,13 +179,14 @@ class SyncCashierData extends Command
                     '{$c->created_at}', '{$c->updated_at}')
             ON CONFLICT(phone) DO UPDATE SET
                 name = excluded.name,
+                phone = excluded.phone,
                 address = excluded.address,
                 updated_at = excluded.updated_at;
             ";
         }
 
         // =========================================================================
-        // 3) TRANSACTIONS (conflict = invoice_code → UPDATE)
+        // 3) TRANSACTIONS (conflict = id → UPDATE to prevent PK collision)
         // =========================================================================
         $exportedIds = [];
 
@@ -205,6 +208,7 @@ class SyncCashierData extends Command
                 ",
                  '{$t->created_at}', '{$t->updated_at}')
             ON CONFLICT(invoice_code) DO UPDATE SET
+                invoice_code = excluded.invoice_code,
                 cashier_id = excluded.cashier_id,
                 customer_id = excluded.customer_id,
                 order_at   = excluded.order_at,
@@ -224,7 +228,7 @@ class SyncCashierData extends Command
         // 4) TRANSACTION ITEMS  (conflict = PK id → UPDATE)
         // =========================================================================
         foreach (DB::table("transaction_items")->get() as $i) {
-            if (!in_array($i->transaction_id, $exportedIds)) {
+            if (!\in_array($i->transaction_id, $exportedIds)) {
                 continue;
             }
 
@@ -253,7 +257,7 @@ class SyncCashierData extends Command
         // 5) PAYMENTS  (conflict = PK id → UPDATE)
         // =========================================================================
         foreach (DB::table("payments")->get() as $p) {
-            if (!in_array($p->transaction_id, $exportedIds)) {
+            if (!\in_array($p->transaction_id, $exportedIds)) {
                 continue;
             }
 

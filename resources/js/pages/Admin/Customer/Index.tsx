@@ -1,4 +1,4 @@
-import { SearchInput } from "@/components/custom/FormElement";
+import { PaginatorBuilder, SearchInput } from "@/components/custom/FormElement";
 import {
     handleElipsisText,
     inputDebounce,
@@ -49,7 +49,7 @@ const AdminCustomerIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["customers"],
-            }
+            },
         );
     });
 
@@ -117,7 +117,7 @@ const AdminCustomerIndex = ({
                                 <TableCell>
                                     {handleElipsisText(
                                         customer.address || "",
-                                        40
+                                        40,
                                     )}
                                 </TableCell>
                                 <TableCell>
@@ -159,6 +159,14 @@ const AdminCustomerIndex = ({
                     </TableBody>
                 </Table>
             </div>
+            {customers.total > customers.per_page && (
+                <PaginatorBuilder
+                    prevUrl={customers.prev_page_url ?? "#"}
+                    nextUrl={customers.next_page_url ?? "#"}
+                    currentPage={customers.current_page}
+                    totalPage={customers.last_page}
+                />
+            )}
         </AppLayout>
     );
 };

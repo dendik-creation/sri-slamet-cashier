@@ -148,7 +148,7 @@ const ShowErrorDetailModal = ({
 }) => {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
                     <DialogTitle>Sinkronisasi Error</DialogTitle>
                     <DialogDescription className="mb-4">

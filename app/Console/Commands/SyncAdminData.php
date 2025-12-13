@@ -51,7 +51,7 @@ class SyncAdminData extends Command
             try {
                 // if sql dqml file exists
                 if (!file_exists($expected_sql_dqml_path)) {
-                    throw new \RuntimeException(
+                    Log::info(
                         "sync:admin → Tidak ada data.sql di folder: {$location}",
                     );
                 }
@@ -71,14 +71,14 @@ class SyncAdminData extends Command
                 }
                 // if current record not found
                 if ($current_record === null) {
-                    throw new \RuntimeException(
+                    Log::info(
                         "sync:admin : Tidak ada record sinkronisasi yang sesuai di action.json untuk folder: {$location}",
                     );
                 }
                 // validate syncing status current record
                 if ($current_record["status"] !== "SYNCING") {
-                    throw new \RuntimeException(
-                        "sync:admin : Status sinkronisasi saat ini bukan SYNCING untuk folder: {$location}",
+                    Log::warning(
+                        "sync:admin → Status sinkronisasi saat ini bukan SYNCING untuk folder: {$location}",
                     );
                 }
                 // Execute SQL DQML
@@ -99,10 +99,8 @@ class SyncAdminData extends Command
                     $expected_action_path,
                     json_encode($action, JSON_PRETTY_PRINT),
                 );
-                // Remove data.sql file
-                unlink($expected_sql_dqml_path);
             } catch (\Exception $e) {
-                Log::error("sync:admin : " . $e->getMessage());
+                Log::error("sync:admin → " . $e->getMessage());
                 // update action.json status to FAILED
                 if (isset($action) && isset($index)) {
                     $action["records"][$index]["status"] = "FAILED";
