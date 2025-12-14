@@ -61,7 +61,11 @@ const CashierTransactionShow = ({
     return (
         <AppLayout>
             <div className="flex justify-between items-center mb-4">
-                <PageTitle title={title} description={description} />
+                <PageTitle
+                    title={title}
+                    description={description}
+                    backUrl="/cashier/transactions/records"
+                />
                 <div className="">
                     <Link href={`/cashier/transactions/edit/${transaction.id}`}>
                         <Button variant={"blue"}>
@@ -158,19 +162,19 @@ const CashierTransactionShow = ({
                                             <TableCell>1</TableCell>
                                             <TableCell>
                                                 {humanPaymentMethod(
-                                                    transaction.payment.method
+                                                    transaction.payment.method,
                                                 )}
                                             </TableCell>
                                             <TableCell>
                                                 {floatToIdCurrency(
                                                     transaction.payment
-                                                        .amount as number
+                                                        .amount as number,
                                                 )}
                                             </TableCell>
                                             <TableCell>
                                                 {ymdToIdDate(
                                                     transaction.payment.paid_at,
-                                                    true
+                                                    true,
                                                 )}
                                             </TableCell>
                                             <TableCell>
@@ -228,7 +232,7 @@ const CashierTransactionShow = ({
                                 <span>
                                     {ymdToIdDate(
                                         transaction.completed_at,
-                                        true
+                                        true,
                                     ) || "-"}
                                 </span>
                             </div>
@@ -272,12 +276,12 @@ const CashierTransactionShow = ({
                                                         </TableCell>
                                                         <TableCell>
                                                             {floatToIdCurrency(
-                                                                item.line_total
+                                                                item.line_total,
                                                             )}
                                                         </TableCell>
                                                         <TableCell>
                                                             {buildTrxItemStatus(
-                                                                item.status
+                                                                item.status,
                                                             )}
                                                         </TableCell>
                                                         <TableCell>
@@ -288,7 +292,7 @@ const CashierTransactionShow = ({
                                                                 : "-"}
                                                         </TableCell>
                                                     </TableRow>
-                                                )
+                                                ),
                                             )
                                         ) : (
                                             <EmptyTable
@@ -308,7 +312,7 @@ const CashierTransactionShow = ({
                                             <TableCell>
                                                 <span className="font-semibold">
                                                     {floatToIdCurrency(
-                                                        transaction.subtotal
+                                                        transaction.subtotal,
                                                     )}
                                                 </span>
                                             </TableCell>
@@ -327,7 +331,7 @@ const CashierTransactionShow = ({
                                                     {floatToIdCurrency(
                                                         (transaction.subtotal *
                                                             transaction.tax_ppn) /
-                                                            100
+                                                            100,
                                                     )}
                                                 </span>
                                             </TableCell>
@@ -344,7 +348,7 @@ const CashierTransactionShow = ({
                                             <TableCell>
                                                 <span className="font-semibold">
                                                     {floatToIdCurrency(
-                                                        transaction.total
+                                                        transaction.total,
                                                     )}
                                                 </span>
                                             </TableCell>

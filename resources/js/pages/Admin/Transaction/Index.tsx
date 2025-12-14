@@ -286,7 +286,7 @@ const AdminTransactionIndex = ({
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         <Link
-                                            href={`/cashier/transactions/${transaction.id}`}
+                                            href={`/admin/transactions/${transaction.id}`}
                                         >
                                             <Button
                                                 size={"icon"}

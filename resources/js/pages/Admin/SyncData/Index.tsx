@@ -155,7 +155,7 @@ const ShowErrorDetailModal = ({
                         Detail error yang ditampilkan untuk langkah sinkronisasi
                         yang dipilih
                     </DialogDescription>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col max-h-96 overflow-y-auto px-1">
                         <span className="font-bold text-sm text-slate-700">
                             Sinkronisasi{" "}
                             {folder_name == "north"

@@ -82,23 +82,25 @@ class SyncAdminData extends Command
                     );
                 }
                 // Execute SQL DQML
-                $sql_content = file_get_contents($expected_sql_dqml_path);
-                $executed = DB::unprepared($sql_content);
-                if ($executed === false) {
-                    throw new \RuntimeException(
-                        "sync:admin → Eksekusi SQL data.sql gagal untuk folder: {$location}",
+                if (file_exists($expected_sql_dqml_path)) {
+                    $sql_content = file_get_contents($expected_sql_dqml_path);
+                    $executed = DB::unprepared($sql_content);
+                    if ($executed === false) {
+                        throw new \RuntimeException(
+                            "sync:admin → Eksekusi SQL data.sql gagal untuk folder: {$location}",
+                        );
+                    }
+                    // Update action.json status to COMPLETED
+                    $action["records"][$index]["status"] = "COMPLETED";
+                    $action["records"][$index]["time"]["completed_at"] = date(
+                        "Y-m-d H:i:s",
+                    );
+                    // Save action.json
+                    file_put_contents(
+                        $expected_action_path,
+                        json_encode($action, JSON_PRETTY_PRINT),
                     );
                 }
-                // Update action.json status to COMPLETED
-                $action["records"][$index]["status"] = "COMPLETED";
-                $action["records"][$index]["time"]["completed_at"] = date(
-                    "Y-m-d H:i:s",
-                );
-                // Save action.json
-                file_put_contents(
-                    $expected_action_path,
-                    json_encode($action, JSON_PRETTY_PRINT),
-                );
             } catch (\Exception $e) {
                 Log::error("sync:admin → " . $e->getMessage());
                 // update action.json status to FAILED

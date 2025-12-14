@@ -7,6 +7,7 @@ import {
     ymdToIdDate,
 } from "@/components/helper/helper";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
     Table,
@@ -60,15 +61,19 @@ const AdminTransactionShow = ({
     return (
         <AppLayout>
             <div className="flex justify-between items-center mb-4">
-                <PageTitle title={title} description={description} />
-                {/* <div className="">
-                    <Link href={`/cashier/transactions/edit/${transaction.id}`}>
+                <PageTitle
+                    title={title}
+                    description={description}
+                    backUrl="/admin/transactions/records"
+                />
+                <div className="">
+                    <Link href={`/admin/transactions/edit/${transaction.id}`}>
                         <Button variant={"blue"}>
                             <Pencil />
                             <span>Edit Transaksi</span>
                         </Button>
                     </Link>
-                </div> */}
+                </div>
             </div>
 
             <div
@@ -157,19 +162,19 @@ const AdminTransactionShow = ({
                                             <TableCell>1</TableCell>
                                             <TableCell>
                                                 {humanPaymentMethod(
-                                                    transaction.payment.method
+                                                    transaction.payment.method,
                                                 )}
                                             </TableCell>
                                             <TableCell>
                                                 {floatToIdCurrency(
                                                     transaction.payment
-                                                        .amount as number
+                                                        .amount as number,
                                                 )}
                                             </TableCell>
                                             <TableCell>
                                                 {ymdToIdDate(
                                                     transaction.payment.paid_at,
-                                                    true
+                                                    true,
                                                 )}
                                             </TableCell>
                                             <TableCell>
@@ -227,7 +232,7 @@ const AdminTransactionShow = ({
                                 <span>
                                     {ymdToIdDate(
                                         transaction.completed_at,
-                                        true
+                                        true,
                                     ) || "-"}
                                 </span>
                             </div>
@@ -271,12 +276,12 @@ const AdminTransactionShow = ({
                                                         </TableCell>
                                                         <TableCell>
                                                             {floatToIdCurrency(
-                                                                item.line_total
+                                                                item.line_total,
                                                             )}
                                                         </TableCell>
                                                         <TableCell>
                                                             {buildTrxItemStatus(
-                                                                item.status
+                                                                item.status,
                                                             )}
                                                         </TableCell>
                                                         <TableCell>
@@ -287,7 +292,7 @@ const AdminTransactionShow = ({
                                                                 : "-"}
                                                         </TableCell>
                                                     </TableRow>
-                                                )
+                                                ),
                                             )
                                         ) : (
                                             <EmptyTable
@@ -307,7 +312,7 @@ const AdminTransactionShow = ({
                                             <TableCell>
                                                 <span className="font-semibold">
                                                     {floatToIdCurrency(
-                                                        transaction.subtotal
+                                                        transaction.subtotal,
                                                     )}
                                                 </span>
                                             </TableCell>
@@ -326,7 +331,7 @@ const AdminTransactionShow = ({
                                                     {floatToIdCurrency(
                                                         (transaction.subtotal *
                                                             transaction.tax_ppn) /
-                                                            100
+                                                            100,
                                                     )}
                                                 </span>
                                             </TableCell>
@@ -343,7 +348,7 @@ const AdminTransactionShow = ({
                                             <TableCell>
                                                 <span className="font-semibold">
                                                     {floatToIdCurrency(
-                                                        transaction.total
+                                                        transaction.total,
                                                     )}
                                                 </span>
                                             </TableCell>

@@ -153,134 +153,301 @@ class SyncCashierData extends Command
     {
         $sql = [];
 
+        // Helper quoting aman untuk SQLite (escape single quote)
+        $q = function ($v) {
+            if ($v === null) {
+                return "NULL";
+            }
+            // boolean -> 0/1
+            if (is_bool($v)) {
+                return $v ? "1" : "0";
+            }
+            // angka -> as is
+            if (is_int($v) || is_float($v)) {
+                return (string) $v;
+            }
+            // Carbon/DateTime/object -> string
+            $s = (string) $v;
+            $s = str_replace("'", "''", $s);
+            return "'{$s}'";
+        };
+
         // =========================================================================
-        // 1) USERS (conflict = username → UPDATE)
+        // 0) Header + transaction wrapper
         // =========================================================================
-        foreach (DB::table("users")->get() as $u) {
+        $sql[] = "PRAGMA foreign_keys=ON;";
+        $sql[] = "BEGIN;";
+
+        // =========================================================================
+        // 1) USERS
+        // Rule: conflict username => SKIP
+        // IMPORTANT: jangan insert kolom id untuk menghindari bentrok PK di CENTRAL
+        // =========================================================================
+        $users = DB::table("users")
+            ->select(
+                "username",
+                "name",
+                "role",
+                "password",
+                "created_at",
+                "updated_at",
+            )
+            ->get();
+
+        foreach ($users as $u) {
             $sql[] = "
-            INSERT INTO users (id, username, name, role, password, created_at, updated_at)
-            VALUES ({$u->id}, '{$u->username}', '{$u->name}', '{$u->role}', '{$u->password}',
-                    '{$u->created_at}', '{$u->updated_at}')
-            ON CONFLICT(username) DO UPDATE SET
-                name = excluded.name,
-                role = excluded.role,
-                password = excluded.password,
-                updated_at = excluded.updated_at;
+                INSERT INTO users (username, name, role, password, created_at, updated_at)
+                VALUES (
+                    {$q($u->username)},
+                    {$q($u->name)},
+                    {$q($u->role)},
+                    {$q($u->password)},
+                    {$q($u->created_at)},
+                    {$q($u->updated_at)}
+                )
+                ON CONFLICT(username) DO NOTHING;
             ";
         }
 
         // =========================================================================
-        // 2) CUSTOMERS (conflict = id → UPDATE to avoid PK collision)
+        // 2) CUSTOMERS
+        // Rule: conflict phone => UPDATE
+        // IMPORTANT: jangan insert id
         // =========================================================================
-        foreach (DB::table("customers")->get() as $c) {
+        $customers = DB::table("customers")
+            ->select("name", "phone", "address", "created_at", "updated_at")
+            ->get();
+
+        foreach ($customers as $c) {
             $sql[] = "
-            INSERT INTO customers (id, name, phone, address, created_at, updated_at)
-            VALUES ({$c->id}, '{$c->name}', '{$c->phone}', '{$c->address}',
-                    '{$c->created_at}', '{$c->updated_at}')
-            ON CONFLICT(phone) DO UPDATE SET
-                name = excluded.name,
-                phone = excluded.phone,
-                address = excluded.address,
-                updated_at = excluded.updated_at;
+                INSERT INTO customers (name, phone, address, created_at, updated_at)
+                VALUES (
+                    {$q($c->name)},
+                    {$q($c->phone)},
+                    {$q($c->address)},
+                    {$q($c->created_at)},
+                    {$q($c->updated_at)}
+                )
+                ON CONFLICT(phone) DO UPDATE SET
+                    name = excluded.name,
+                    address = excluded.address,
+                    updated_at = excluded.updated_at;
             ";
         }
 
         // =========================================================================
-        // 3) TRANSACTIONS (conflict = id → UPDATE to prevent PK collision)
+        // 3) TRANSACTIONS
+        // Rule: conflict invoice_code => UPDATE
+        // IMPORTANT:
+        // - jangan insert id (biar CENTRAL id sendiri)
+        // - cashier_id => map by username (SELECT id FROM users WHERE username=?)
+        // - customer_id => map by phone (SELECT id FROM customers WHERE phone=?)
         // =========================================================================
-        $exportedIds = [];
+        $transactions = DB::table("transactions")
+            ->select(
+                "invoice_code",
+                "cashier_id",
+                "customer_id",
+                "order_at",
+                "status",
+                "subtotal",
+                "tax_ppn",
+                "total",
+                "is_paid",
+                "completed_at",
+                "created_at",
+                "updated_at",
+            )
+            ->get();
 
-        foreach (DB::table("transactions")->get() as $t) {
+        // Untuk mapping, kita butuh data username cashier dan phone customer dari kasir
+        // Ambil semua user dan customer ke map lokal
+        $userMap = DB::table("users")->pluck("username", "id"); // [local_id => username]
+        $custMap = DB::table("customers")->pluck("phone", "id"); // [local_id => phone]
+
+        // Simpan invoice_code yang disertakan agar children (items/payments) bisa difilter
+        $exportedInvoices = [];
+
+        foreach ($transactions as $t) {
+            $cashierUsername = $userMap[$t->cashier_id] ?? null;
+            $customerPhone = $t->customer_id
+                ? $custMap[$t->customer_id] ?? null
+                : null;
+
+            // cashier_id CENTRAL harus ada. Kalau tidak ada (harusnya ada), set NULL agar tidak error (atau bisa di-skip)
+            $cashierIdSql = $cashierUsername
+                ? "(SELECT id FROM users WHERE username = {$q(
+                    $cashierUsername,
+                )} LIMIT 1)"
+                : "NULL";
+
+            $customerIdSql = $customerPhone
+                ? "(SELECT id FROM customers WHERE phone = {$q(
+                    $customerPhone,
+                )} LIMIT 1)"
+                : "NULL";
+
             $sql[] =
                 "
-            INSERT INTO transactions
-                (id, invoice_code, cashier_id, customer_id, order_at, status,
-                 subtotal, tax_ppn, total, is_paid, completed_at, created_at, updated_at)
-            VALUES
-                ({$t->id}, '{$t->invoice_code}', {$t->cashier_id},
-                 " .
-                ($t->customer_id ?: "NULL") .
+                INSERT INTO transactions (
+                    invoice_code, cashier_id, customer_id, order_at, status,
+                    subtotal, tax_ppn, total, is_paid, completed_at, created_at, updated_at
+                )
+                VALUES (
+                    {$q($t->invoice_code)},
+                    {$cashierIdSql},
+                    {$customerIdSql},
+                    {$q($t->order_at)},
+                    {$q($t->status)},
+                    {$q((int) $t->subtotal)},
+                    {$q((int) $t->tax_ppn)},
+                    {$q((int) $t->total)},
+                    {$q((int) $t->is_paid)},
+                    " .
+                ($t->completed_at ? $q($t->completed_at) : "NULL") .
                 ",
-                 '{$t->order_at}', '{$t->status}', {$t->subtotal}, {$t->tax_ppn},
-                 {$t->total}, {$t->is_paid},
-                 " .
-                ($t->completed_at ? "'{$t->completed_at}'" : "NULL") .
-                ",
-                 '{$t->created_at}', '{$t->updated_at}')
-            ON CONFLICT(invoice_code) DO UPDATE SET
-                invoice_code = excluded.invoice_code,
-                cashier_id = excluded.cashier_id,
-                customer_id = excluded.customer_id,
-                order_at   = excluded.order_at,
-                status     = excluded.status,
-                subtotal   = excluded.subtotal,
-                tax_ppn    = excluded.tax_ppn,
-                total      = excluded.total,
-                is_paid    = excluded.is_paid,
-                completed_at = excluded.completed_at,
-                updated_at = excluded.updated_at;
+                    {$q($t->created_at)},
+                    {$q($t->updated_at)}
+                )
+                ON CONFLICT(invoice_code) DO UPDATE SET
+                    cashier_id = excluded.cashier_id,
+                    customer_id = excluded.customer_id,
+                    order_at = excluded.order_at,
+                    status = excluded.status,
+                    subtotal = excluded.subtotal,
+                    tax_ppn = excluded.tax_ppn,
+                    total = excluded.total,
+                    is_paid = excluded.is_paid,
+                    completed_at = excluded.completed_at,
+                    updated_at = excluded.updated_at;
             ";
 
-            $exportedIds[] = $t->id;
+            $exportedInvoices[] = $t->invoice_code;
         }
 
         // =========================================================================
-        // 4) TRANSACTION ITEMS  (conflict = PK id → UPDATE)
+        // 4) TRANSACTION ITEMS & 5) PAYMENTS
+        // Rule: ikut "update berdasarkan transaksi".
+        // SOLUSI AMAN TANPA id_global:
+        // - untuk setiap invoice yang diekspor:
+        //   - DELETE semua items/payments milik transaksi itu di CENTRAL
+        //   - INSERT ulang items/payments dari kasir, dengan transaction_id CENTRAL via invoice_code
         // =========================================================================
-        foreach (DB::table("transaction_items")->get() as $i) {
-            if (!\in_array($i->transaction_id, $exportedIds)) {
-                continue;
+
+        if (!empty($exportedInvoices)) {
+            // Buat set invoice untuk filter cepat
+            $invoiceSet = array_flip($exportedInvoices);
+
+            // Ambil semua transaksi kasir, kita butuh mapping local transaction_id => invoice_code
+            $trxLocalMap = DB::table("transactions")->pluck(
+                "invoice_code",
+                "id",
+            ); // [local_trx_id => invoice]
+
+            // ---------- DELETE children per invoice ----------
+            foreach ($exportedInvoices as $inv) {
+                $trxIdCentral = "(SELECT id FROM transactions WHERE invoice_code = {$q(
+                    $inv,
+                )} LIMIT 1)";
+
+                $sql[] = "DELETE FROM transaction_items WHERE transaction_id = {$trxIdCentral};";
+                $sql[] = "DELETE FROM payments WHERE transaction_id = {$trxIdCentral};";
             }
 
-            $sql[] =
-                "
-            INSERT INTO transaction_items
-                (id, transaction_id, description, line_total, status,
-                 refund_reason, created_at, updated_at)
-            VALUES
-                ({$i->id}, {$i->transaction_id}, '{$i->description}', {$i->line_total},
-                 '{$i->status}', " .
-                ($i->refund_reason ? "'{$i->refund_reason}'" : "NULL") .
-                ",
-                 '{$i->created_at}', '{$i->updated_at}')
-            ON CONFLICT(id) DO UPDATE SET
-                transaction_id = excluded.transaction_id,
-                description = excluded.description,
-                line_total = excluded.line_total,
-                status = excluded.status,
-                refund_reason = excluded.refund_reason,
-                updated_at = excluded.updated_at;
-            ";
-        }
+            // ---------- INSERT ITEMS ----------
+            $items = DB::table("transaction_items")
+                ->select(
+                    "transaction_id",
+                    "description",
+                    "line_total",
+                    "status",
+                    "refund_reason",
+                    "created_at",
+                    "updated_at",
+                )
+                ->get();
 
-        // =========================================================================
-        // 5) PAYMENTS  (conflict = PK id → UPDATE)
-        // =========================================================================
-        foreach (DB::table("payments")->get() as $p) {
-            if (!\in_array($p->transaction_id, $exportedIds)) {
-                continue;
+            foreach ($items as $i) {
+                $inv = $trxLocalMap[$i->transaction_id] ?? null;
+                if (!$inv || !isset($invoiceSet[$inv])) {
+                    continue;
+                }
+
+                $trxIdCentral = "(SELECT id FROM transactions WHERE invoice_code = {$q(
+                    $inv,
+                )} LIMIT 1)";
+
+                $sql[] =
+                    "
+                    INSERT INTO transaction_items (
+                        transaction_id, description, line_total, status, refund_reason, created_at, updated_at
+                    ) VALUES (
+                        {$trxIdCentral},
+                        {$q($i->description)},
+                        {$q((int) $i->line_total)},
+                        {$q($i->status)},
+                        " .
+                    ($i->refund_reason ? $q($i->refund_reason) : "NULL") .
+                    ",
+                        {$q($i->created_at)},
+                        {$q($i->updated_at)}
+                    );
+                ";
             }
 
-            $sql[] =
-                "
-            INSERT INTO payments
-                (id, transaction_id, recorded_by, method, amount, paid_at,
-                 created_at, updated_at)
-            VALUES
-                ({$p->id}, {$p->transaction_id}, {$p->recorded_by}, '{$p->method}',
-                 {$p->amount}, " .
-                ($p->paid_at ? "'{$p->paid_at}'" : "NULL") .
-                ",
-                 '{$p->created_at}', '{$p->updated_at}')
-            ON CONFLICT(id) DO UPDATE SET
-                transaction_id = excluded.transaction_id,
-                recorded_by    = excluded.recorded_by,
-                method         = excluded.method,
-                amount         = excluded.amount,
-                paid_at        = excluded.paid_at,
-                updated_at     = excluded.updated_at;
-            ";
+            // ---------- INSERT PAYMENTS ----------
+            $payments = DB::table("payments")
+                ->select(
+                    "transaction_id",
+                    "recorded_by",
+                    "method",
+                    "amount",
+                    "paid_at",
+                    "created_at",
+                    "updated_at",
+                )
+                ->get();
+
+            // recorded_by map local user_id => username
+            $userLocalMap = DB::table("users")->pluck("username", "id");
+
+            foreach ($payments as $p) {
+                $inv = $trxLocalMap[$p->transaction_id] ?? null;
+                if (!$inv || !isset($invoiceSet[$inv])) {
+                    continue;
+                }
+
+                $trxIdCentral = "(SELECT id FROM transactions WHERE invoice_code = {$q(
+                    $inv,
+                )} LIMIT 1)";
+
+                $recordedByUsername = $userLocalMap[$p->recorded_by] ?? null;
+                $recordedByCentral = $recordedByUsername
+                    ? "(SELECT id FROM users WHERE username = {$q(
+                        $recordedByUsername,
+                    )} LIMIT 1)"
+                    : "NULL";
+
+                $sql[] =
+                    "
+                    INSERT INTO payments (
+                        transaction_id, recorded_by, method, amount, paid_at, created_at, updated_at
+                    ) VALUES (
+                        {$trxIdCentral},
+                        {$recordedByCentral},
+                        {$q($p->method)},
+                        {$q((int) $p->amount)},
+                        " .
+                    ($p->paid_at ? $q($p->paid_at) : "NULL") .
+                    ",
+                        {$q($p->created_at)},
+                        {$q($p->updated_at)}
+                    );
+                ";
+            }
         }
+
+        $sql[] = "COMMIT;";
 
         return implode("\n", $sql);
     }

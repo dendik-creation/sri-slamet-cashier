@@ -5,9 +5,10 @@ import { useEffect } from "react";
 export type PageTitleProps = {
     title?: string;
     description?: string;
+    backUrl?: string;
 };
 
-export const PageTitle = ({ title, description }: PageTitleProps) => {
+export const PageTitle = ({ title, description, backUrl }: PageTitleProps) => {
     const pathname = window.location.pathname;
     useEffect(() => {
         document.title = title || "CV Sri Slamet";
@@ -18,7 +19,11 @@ export const PageTitle = ({ title, description }: PageTitleProps) => {
                 {!pathname.includes("dashboard") &&
                     pathname.split("/").length > 1 && (
                         <Button
-                            onClick={() => window.history.back()}
+                            onClick={() =>
+                                backUrl
+                                    ? window.location.replace(backUrl)
+                                    : window.history.back()
+                            }
                             className="h-full py-5"
                             size={"icon"}
                             variant={"outline"}
