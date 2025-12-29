@@ -40,10 +40,6 @@ const AdminCustomerCreate = () => {
             setError("name", "Nama Lengkap wajib diisi");
             isValid = false;
         }
-        if (!data.phone || data.phone.trim() === "") {
-            setError("phone", "No Telp wajib diisi");
-            isValid = false;
-        }
         if (!data.address || data.address.trim() === "") {
             setError("address", "Alamat wajib diisi");
             isValid = false;
@@ -92,9 +88,7 @@ const AdminCustomerCreate = () => {
                             {errors.name && <ErrorInput error={errors.name} />}
                         </div>
                         <div className="flex flex-col w-full">
-                            <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                                No Telepon
-                            </label>
+                            <label className="text-base mb-1">No Telepon</label>
                             <Input
                                 type="text"
                                 placeholder="Masukkan No Telepon"

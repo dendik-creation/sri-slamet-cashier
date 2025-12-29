@@ -4,8 +4,9 @@ import { PaginationData } from "./global";
 export type Customer = {
     id: number;
     name: string;
-    phone: string;
+    phone?: string;
     address: string;
+    slug: string;
     created_at?: string;
     updated_at?: string;
 };

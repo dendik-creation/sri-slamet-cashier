@@ -95,6 +95,9 @@ const AdminCustomerIndex = ({
                                 Nama Lengkap
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
+                                Slug
+                            </TableHead>
+                            <TableHead className="bg-stone-200 font-semibold">
                                 No Telepon
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
@@ -113,7 +116,8 @@ const AdminCustomerIndex = ({
                             <TableRow key={customer.id}>
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{customer.name}</TableCell>
-                                <TableCell>{customer.phone}</TableCell>
+                                <TableCell>{customer.slug}</TableCell>
+                                <TableCell>{customer.phone || "-"}</TableCell>
                                 <TableCell>
                                     {handleElipsisText(
                                         customer.address || "",

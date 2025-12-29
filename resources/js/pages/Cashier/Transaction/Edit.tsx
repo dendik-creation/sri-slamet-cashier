@@ -213,10 +213,6 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
             setError("trx.customer_id", "Pelanggan wajib dipilih");
             isValid = false;
         }
-        if (!data.trx.customer_phone || data.trx.customer_phone.trim() === "") {
-            setError("trx.customer_phone", "No Telp wajib diisi");
-            isValid = false;
-        }
         if (
             !data.trx.customer_address ||
             data.trx.customer_address.trim() === ""
@@ -299,7 +295,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
         put(`/cashier/transactions/update/${transaction.id}`, {
             preserveScroll: true,
             onError: (err: any) => {
-                BlastToaster("error", err.toString());
+                BlastToaster("error", "Terjadi kesalahan pada form");
             },
         });
     };
@@ -351,7 +347,7 @@ const CashierTransactionEdit: React.FC<CashierTrxEditProps> = ({
                                 )}
                             </div>
                             <div className="flex flex-col">
-                                <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                <label className="text-base mb-1">
                                     No Telepon
                                 </label>
                                 <Input

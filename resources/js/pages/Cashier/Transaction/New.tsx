@@ -215,10 +215,6 @@ const CashierTransactionNew = ({
                 isValid = false;
             }
         }
-        if (!data.trx.customer_phone || data.trx.customer_phone.trim() === "") {
-            setError("trx.customer_phone", "No Telp wajib diisi");
-            isValid = false;
-        }
         if (
             !data.trx.customer_address ||
             data.trx.customer_address.trim() === ""
@@ -258,7 +254,7 @@ const CashierTransactionNew = ({
             replace: true,
             preserveScroll: true,
             onError: (err) => {
-                BlastToaster("error", err.toString());
+                BlastToaster("error", "Terjadi kesalahan pada form");
             },
         });
     };
@@ -335,7 +331,7 @@ const CashierTransactionNew = ({
                                 )}
                             </div>
                             <div className="flex flex-col">
-                                <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                <label className="text-base mb-1">
                                     No Telepon
                                 </label>
                                 <Input

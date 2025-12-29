@@ -101,9 +101,15 @@ const CashierTransactionShow = ({
                             </div>
                             <div className="flex flex-col items-start">
                                 <span className="font-semibold text-slate-600">
+                                    Slug
+                                </span>
+                                <span>{transaction.customer.slug}</span>
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-semibold text-slate-600">
                                     No Telepon
                                 </span>
-                                <span>{transaction.customer.phone}</span>
+                                <span>{transaction.customer.phone || "-"}</span>
                             </div>
                             <div className="flex flex-col items-start">
                                 <span className="font-semibold text-slate-600">

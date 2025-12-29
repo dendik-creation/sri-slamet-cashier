@@ -36,6 +36,7 @@ import "filepond/dist/filepond.min.css";
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import { ymdToIdDate } from "@/components/helper/helper";
 import { SelectOption } from "@/types/global";
+import { Link } from "@inertiajs/react";
 
 registerPlugin(FilePondPluginFileValidateType);
 
@@ -188,10 +189,10 @@ export function SelectSearchInput({
                             <CommandEmpty>Pilihan tidak ada</CommandEmpty>
                             <CommandGroup>
                                 {options &&
-                                    options.map((option) => (
+                                    options.map((option, index) => (
                                         <CommandItem
-                                            key={option.value}
-                                            value={option.value}
+                                            key={`${option.value}-${index}`}
+                                            value={`${option.label}-${option.value}`}
                                             onSelect={() => {
                                                 onChange(option.value);
                                                 setOpen(false);

@@ -49,7 +49,7 @@ const CashierCustomerIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["customers"],
-            }
+            },
         );
     });
 
@@ -95,6 +95,9 @@ const CashierCustomerIndex = ({
                                 Nama Lengkap
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
+                                Slug
+                            </TableHead>
+                            <TableHead className="bg-stone-200 font-semibold">
                                 No Telepon
                             </TableHead>
                             <TableHead className="bg-stone-200 font-semibold">
@@ -113,11 +116,12 @@ const CashierCustomerIndex = ({
                             <TableRow key={customer.id}>
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{customer.name}</TableCell>
-                                <TableCell>{customer.phone}</TableCell>
+                                <TableCell>{customer.slug}</TableCell>
+                                <TableCell>{customer.phone || "-"}</TableCell>
                                 <TableCell>
                                     {handleElipsisText(
                                         customer.address || "",
-                                        40
+                                        40,
                                     )}
                                 </TableCell>
                                 <TableCell>

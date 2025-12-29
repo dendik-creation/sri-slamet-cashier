@@ -211,25 +211,34 @@ class SyncCashierData extends Command
 
         // =========================================================================
         // 2) CUSTOMERS
-        // Rule: conflict phone => UPDATE
+        // Rule: conflict slug => UPDATE
         // IMPORTANT: jangan insert id
         // =========================================================================
         $customers = DB::table("customers")
-            ->select("name", "phone", "address", "created_at", "updated_at")
+            ->select(
+                "slug",
+                "name",
+                "phone",
+                "address",
+                "created_at",
+                "updated_at",
+            )
             ->get();
 
         foreach ($customers as $c) {
             $sql[] = "
-                INSERT INTO customers (name, phone, address, created_at, updated_at)
+                INSERT INTO customers (slug, name, phone, address, created_at, updated_at)
                 VALUES (
+                    {$q($c->slug)},
                     {$q($c->name)},
                     {$q($c->phone)},
                     {$q($c->address)},
                     {$q($c->created_at)},
                     {$q($c->updated_at)}
                 )
-                ON CONFLICT(phone) DO UPDATE SET
+                ON CONFLICT(slug) DO UPDATE SET
                     name = excluded.name,
+                    phone = excluded.phone,
                     address = excluded.address,
                     updated_at = excluded.updated_at;
             ";
@@ -241,7 +250,7 @@ class SyncCashierData extends Command
         // IMPORTANT:
         // - jangan insert id (biar CENTRAL id sendiri)
         // - cashier_id => map by username (SELECT id FROM users WHERE username=?)
-        // - customer_id => map by phone (SELECT id FROM customers WHERE phone=?)
+        // - customer_id => map by slug (SELECT id FROM customers WHERE slug=?)
         // =========================================================================
         $transactions = DB::table("transactions")
             ->select(
@@ -260,17 +269,17 @@ class SyncCashierData extends Command
             )
             ->get();
 
-        // Untuk mapping, kita butuh data username cashier dan phone customer dari kasir
+        // Untuk mapping, kita butuh data username cashier dan slug customer dari kasir
         // Ambil semua user dan customer ke map lokal
         $userMap = DB::table("users")->pluck("username", "id"); // [local_id => username]
-        $custMap = DB::table("customers")->pluck("phone", "id"); // [local_id => phone]
+        $custMap = DB::table("customers")->pluck("slug", "id"); // [local_id => slug]
 
         // Simpan invoice_code yang disertakan agar children (items/payments) bisa difilter
         $exportedInvoices = [];
 
         foreach ($transactions as $t) {
             $cashierUsername = $userMap[$t->cashier_id] ?? null;
-            $customerPhone = $t->customer_id
+            $customerSlug = $t->customer_id
                 ? $custMap[$t->customer_id] ?? null
                 : null;
 
@@ -281,9 +290,9 @@ class SyncCashierData extends Command
                 )} LIMIT 1)"
                 : "NULL";
 
-            $customerIdSql = $customerPhone
-                ? "(SELECT id FROM customers WHERE phone = {$q(
-                    $customerPhone,
+            $customerIdSql = $customerSlug
+                ? "(SELECT id FROM customers WHERE slug = {$q(
+                    $customerSlug,
                 )} LIMIT 1)"
                 : "NULL";
 

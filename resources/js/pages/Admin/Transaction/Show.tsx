@@ -92,7 +92,7 @@ const AdminTransactionShow = ({
                                 Informasi Pelanggan
                             </h3>
                         </div>
-                        <div className="flex flex-col text-sm gap-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 text-sm gap-2">
                             <div className="flex flex-col items-start">
                                 <span className="font-semibold text-slate-600">
                                     Nama Pelanggan
@@ -101,9 +101,15 @@ const AdminTransactionShow = ({
                             </div>
                             <div className="flex flex-col items-start">
                                 <span className="font-semibold text-slate-600">
+                                    Slug
+                                </span>
+                                <span>{transaction.customer.slug}</span>
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-semibold text-slate-600">
                                     No Telepon
                                 </span>
-                                <span>{transaction.customer.phone}</span>
+                                <span>{transaction.customer.phone || "-"}</span>
                             </div>
                             <div className="flex flex-col items-start">
                                 <span className="font-semibold text-slate-600">

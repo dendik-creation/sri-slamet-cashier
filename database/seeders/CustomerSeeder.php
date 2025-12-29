@@ -17,6 +17,7 @@ class CustomerSeeder extends Seeder
             [
                 "name" => "Pelanggan 1",
                 "phone" => "081234567890",
+                "slug" => "pelanggan-1",
                 "address" => "Jl. Merdeka No. 1, Kudus",
                 "created_at" => now(),
                 "updated_at" => now(),

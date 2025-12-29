@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class TransactionController extends Controller
@@ -139,26 +140,35 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            "is_new_customer" => "required|boolean",
-            "trx.invoice_code" => "required|unique:transactions,invoice_code",
-            "trx.customer_id" => [
-                $request->input("is_new_customer") ? "nullable" : "required",
-                "exists:customers,id",
+        $validated = $request->validate(
+            [
+                "is_new_customer" => "required|boolean",
+                "trx.invoice_code" =>
+                    "required|unique:transactions,invoice_code",
+                "trx.customer_id" => [
+                    $request->input("is_new_customer")
+                        ? "nullable"
+                        : "required",
+                    "exists:customers,id",
+                ],
+                "trx.customer_name" => "required|string",
+                "trx.customer_phone" => "nullable|string",
+                "trx.customer_address" => "required|string",
+                "trx.order_at" => "required",
+                "trx.trx_items" => "required|array|min:1",
+                "trx.trx_items.*.description" => "required|string",
+                "trx.trx_items.*.line_total" => "required|numeric",
+                "trx.subtotal" => "required|numeric",
+                "trx.tax_ppn" => "required|numeric",
+                "trx.total" => "required|numeric",
+                "trx.payment.method" => "nullable|string",
+                "trx.payment.amount" => "nullable|numeric",
             ],
-            "trx.customer_name" => "required|string",
-            "trx.customer_phone" => "required|string",
-            "trx.customer_address" => "required|string",
-            "trx.order_at" => "required",
-            "trx.trx_items" => "required|array|min:1",
-            "trx.trx_items.*.description" => "required|string",
-            "trx.trx_items.*.line_total" => "required|numeric",
-            "trx.subtotal" => "required|numeric",
-            "trx.tax_ppn" => "required|numeric",
-            "trx.total" => "required|numeric",
-            "trx.payment.method" => "nullable|string",
-            "trx.payment.amount" => "nullable|numeric",
-        ]);
+            [
+                "trx.invoice_code.unique" =>
+                    "Kode transaksi sudah digunakan pada transaksi lain",
+            ],
+        );
 
         $auth = Auth::user();
         $transaction = [
@@ -178,10 +188,31 @@ class TransactionController extends Controller
 
         // Save Customer
         if ($validated["is_new_customer"]) {
+            $slug = "";
+            $slug_by_name = Str::slug($validated["trx"]["customer_name"], "-");
+            $slug_exist_count = Customer::where(function ($query) use (
+                $slug_by_name,
+                $validated,
+            ) {
+                $query
+                    ->where("slug", "like", $slug_by_name)
+                    ->orWhere(
+                        "name",
+                        "like",
+                        $validated["trx"]["customer_name"],
+                    );
+            })->count();
+
+            $slug =
+                $slug_exist_count > 0
+                    ? $slug_by_name . "-" . ($slug_exist_count + 1)
+                    : $slug_by_name;
+
             $new_cust = Customer::create([
                 "name" => $validated["trx"]["customer_name"],
                 "phone" => $validated["trx"]["customer_phone"],
                 "address" => $validated["trx"]["customer_address"],
+                "slug" => $slug,
             ]);
             $transaction["customer_id"] = $new_cust["id"];
         } else {
@@ -278,7 +309,7 @@ class TransactionController extends Controller
                     $transaction->id,
                 "trx.customer_id" => ["required", "exists:customers,id"],
                 "trx.customer_name" => "required|string",
-                "trx.customer_phone" => "required|string",
+                "trx.customer_phone" => "nullable|string",
                 "trx.customer_address" => "required|string",
                 "trx.order_at" => "required",
                 "trx.completed_at" => "nullable",
@@ -325,10 +356,36 @@ class TransactionController extends Controller
             // Customer always existing now; assign and optionally sync basic info
             $transaction->customer_id = $validated["trx"]["customer_id"];
             if ($transaction->customer_id) {
+                $slug_by_name = Str::slug(
+                    $validated["trx"]["customer_name"],
+                    "-",
+                );
+                $slug_exist_count = Customer::where(function ($query) use (
+                    $slug_by_name,
+                    $validated,
+                    $transaction,
+                ) {
+                    $query
+                        ->where("slug", "like", $slug_by_name)
+                        ->orWhere(
+                            "name",
+                            "like",
+                            $validated["trx"]["customer_name"],
+                        );
+                })
+                    ->where("id", "!=", $transaction->customer_id)
+                    ->count();
+
+                $slug =
+                    $slug_exist_count > 0
+                        ? $slug_by_name . "-" . ($slug_exist_count + 1)
+                        : $slug_by_name;
+
                 Customer::where("id", $transaction->customer_id)->update([
                     "name" => $validated["trx"]["customer_name"],
                     "phone" => $validated["trx"]["customer_phone"],
                     "address" => $validated["trx"]["customer_address"],
+                    "slug" => $slug,
                 ]);
             }
 
